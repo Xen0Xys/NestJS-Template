@@ -14,7 +14,7 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node",
-    "maxWorkers": 2,
+    "maxWorkers": "50%",
     "cacheDirectory": "../.jest/cache",
     "workerIdleMemoryLimit": "512MB"
 }

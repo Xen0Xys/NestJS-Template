@@ -4,7 +4,7 @@ import * as dotenv from "dotenv";
 import {AssertionError} from "node:assert";
 import * as crypto from "crypto";
 
-dotenv.config();
+dotenv.config({path: ".env.ci"});
 
 describe("EncryptionService", () => {
     let service: EncryptionService;

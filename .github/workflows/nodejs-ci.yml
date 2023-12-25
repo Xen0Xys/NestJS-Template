@@ -32,5 +32,9 @@ jobs:
         run: pnpm install
       - name: Run linter
         run: pnpm run lint
+      - name: Run Prisma migrations
+        run: prisma migrate dev --name init
+      - name: Seed database
+        run: prisma db seed
       - name: Run tests and coverage
         run: pnpm run test:cov

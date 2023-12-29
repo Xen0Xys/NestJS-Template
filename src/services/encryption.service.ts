@@ -1,10 +1,11 @@
 import {Injectable} from "@nestjs/common";
-import * as jwt from "jsonwebtoken";
 import * as crypto from "crypto";
 import * as argon2 from "argon2";
 
+
 @Injectable()
 export class EncryptionService{
+    // Hash functions
     getSum(content: string | Buffer): string{
         if(!content) content = "";
         return crypto.createHash("sha256").update(content).digest("hex");
@@ -24,6 +25,7 @@ export class EncryptionService{
         return await argon2.verify(hash, content);
     }
 
+    // Symmetric functions
     encryptSymmetric(content: string, encryptionKey: string | Buffer, timeCost = 200000){
         if(!content) content = "";
         const salt = crypto.randomBytes(32);
@@ -54,12 +56,13 @@ export class EncryptionService{
         return decrypted;
     }
 
+    // Asymmetric functions
     generateKeyPair(modulusLength = 4096, privateEncryptionKey = null){
         if(!privateEncryptionKey)
             console.warn("No private encryption key provided, the private key will not be encrypted");
-        let privateKeyEncodingOptions = undefined;
+        let options = undefined;
         if(privateEncryptionKey){
-            privateKeyEncodingOptions = {
+            options = {
                 cipher: "aes-256-cbc",
                 passphrase: privateEncryptionKey
             };
@@ -73,7 +76,7 @@ export class EncryptionService{
             privateKeyEncoding: {
                 type: "pkcs8",
                 format: "pem",
-                ...privateKeyEncodingOptions
+                ...options
             }
         });
     }
@@ -103,15 +106,8 @@ export class EncryptionService{
             }, buffer).toString("utf-8");
     }
 
-    generateJWT(content: any, expiresIn: string, jwtKey: string | Buffer, symmetric = true, privateEncryptionKey = undefined){
-        const algorithm = symmetric ? "HS512" : "RS512";
-        if(symmetric)
-            return jwt.sign(content, jwtKey, {expiresIn, algorithm});
-        else
-            return jwt.sign(content, {key: jwtKey, passphrase: privateEncryptionKey}, {expiresIn, algorithm});
-    }
-
-    verifyJWT(token: string, jwtKey: string | Buffer){
-        return jwt.verify(token, jwtKey);
+    // Secret functions
+    generateSecret(length = 32){
+        return crypto.randomBytes(length).toString("hex");
     }
 }

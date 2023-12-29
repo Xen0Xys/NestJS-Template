@@ -1,9 +1,8 @@
-import {Controller, Get, Req, Res, UseGuards} from "@nestjs/common";
+import {Controller, Get, HttpStatus, NotFoundException, Req, UseGuards} from "@nestjs/common";
 import {ApiBearerAuth, ApiResponse, ApiTags} from "@nestjs/swagger";
 import {AuthGuard} from "../auth/guards/auth.guard";
 import {UsersService} from "./users.service";
 import {UserEntity} from "./entities/user.entity";
-import {FastifyReply} from "fastify";
 
 @Controller("users")
 @ApiTags("Users")
@@ -13,13 +12,14 @@ export class UsersController{
     @Get("self")
     @UseGuards(AuthGuard)
     @ApiBearerAuth()
-    @ApiResponse({status: 200, description: "Get self", type: UserEntity})
-    @ApiResponse({status: 404, description: "User not found"})
-    async findSelf(@Req() req: any, @Res() res: FastifyReply): Promise<UserEntity>{
+    @ApiResponse({status: HttpStatus.OK, description: "Get self", type: UserEntity})
+    @ApiResponse({status: HttpStatus.NOT_FOUND, description: "User not found"})
+    @ApiResponse({status: HttpStatus.UNAUTHORIZED, description: "Missing bearer token"})
+    async findSelf(@Req() req: any): Promise<UserEntity>{
         const user = await this.usersService.findOne(req.user.id);
         if(!user)
-            return res.status(404).send({message: "User not found"});
+            throw new NotFoundException("User not found");
         delete user.password;
-        return res.status(200).send(user);
+        return user;
     }
 }

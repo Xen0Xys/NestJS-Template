@@ -9,9 +9,9 @@ export class UserEntity implements User{
     @ApiProperty()
         password: string;
     @ApiProperty()
-        groupId: number;
+        group_id: number;
     @ApiProperty()
-        createdAt: Date;
+        created_at: Date;
     @ApiProperty()
-        updatedAt: Date;
+        updated_at: Date;
 }

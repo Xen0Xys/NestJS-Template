@@ -26,7 +26,7 @@ async function main(){
         create: {
             username: "admin",
             password: "$argon2id$v=19$m=12,t=10,p=1$emxtN2RndHBvenAwMDAwMA$Ecz+bRSpVdiq9BMMJbOfAw",
-            groupId: adminGroup.id,
+            group_id: adminGroup.id,
         },
     });
 

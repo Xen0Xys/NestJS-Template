@@ -1,6 +1,7 @@
 import {FastifyAdapter, NestFastifyApplication} from "@nestjs/platform-fastify";
+import {CustomValidationPipe} from "./pipes/custom-validation.pipe";
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
-import {LoggerMiddleware} from "./logger/logger.middleware";
+import {LoggerMiddleware} from "./middlewares/logger.middleware";
 import * as compression from "@fastify/compress";
 import {RawServerDefault} from "fastify";
 import {NestFactory} from "@nestjs/core";
@@ -9,6 +10,7 @@ import * as process from "process";
 import * as dotenv from "dotenv";
 import helmet from "helmet";
 import * as fs from "fs";
+import * as os from "os";
 
 dotenv.config();
 
@@ -30,10 +32,30 @@ async function bootstrap(){
     }
 }
 
+function logServerStart(bindAddress: string, port: string | number, protocol: string){
+    if(bindAddress === "0.0.0.0"){
+        const ifaces = os.networkInterfaces();
+        Object.keys(ifaces).forEach(function(ifname){
+            let alias = 0;
+            ifaces[ifname].forEach(function(iface){
+                if("IPv4" !== iface.family || iface.internal !== false)
+                    return;
+                if(alias >= 1)
+                    bindAddress = iface.address;
+                else
+                    bindAddress = iface.address;
+                ++alias;
+            });
+        });
+    }
+    console.log(`Server started on ${protocol}://${bindAddress}:${port}`);
+}
+
 async function startHttpServer(){
     const httpApp = await NestFactory.create<NestFastifyApplication>(AppModule , new FastifyAdapter());
     await loadServer(httpApp);
     await httpApp.listen(process.env.HTTP_PORT, process.env.BIND_ADDRESS);
+    logServerStart(process.env.BIND_ADDRESS, process.env.HTTP_PORT, "http");
 }
 
 async function startHttpsServer(){
@@ -44,6 +66,7 @@ async function startHttpsServer(){
     const httpsApp = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({https: httpsOptions}));
     await loadServer(httpsApp);
     await httpsApp.listen(process.env.HTTPS_PORT, process.env.BIND_ADDRESS);
+    logServerStart(process.env.BIND_ADDRESS, process.env.HTTP_PORT, "https");
 }
 
 async function loadServer(server: NestFastifyApplication<RawServerDefault>){
@@ -67,10 +90,12 @@ async function loadServer(server: NestFastifyApplication<RawServerDefault>){
     SwaggerModule.setup("api", server, document, {
         swaggerOptions: {
             filter: true,
-            showRequestDuration: true,
+            displayRequestDuration: true,
             persistAuthorization: true,
         },
     });
+
+    server.useGlobalPipes(new CustomValidationPipe());
 }
 
 bootstrap();

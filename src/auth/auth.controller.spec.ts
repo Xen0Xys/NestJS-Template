@@ -1,9 +1,9 @@
 import {Test, TestingModule} from "@nestjs/testing";
 import {AuthController} from "./auth.controller";
 import {AuthService} from "./auth.service";
-import {EncryptionService} from "../encryption/encryption.service";
-import {UsersService} from "../users/users.service";
-import {PrismaService} from "../prisma/prisma.service";
+import {UsersModule} from "../users/users.module";
+import {PrismaService} from "../services/prisma.service";
+import {EncryptionService} from "../services/encryption.service";
 
 describe("AuthController", () => {
     let controller: AuthController;
@@ -11,7 +11,8 @@ describe("AuthController", () => {
     beforeEach(async() => {
         const module: TestingModule = await Test.createTestingModule({
             controllers: [AuthController],
-            providers: [AuthService, PrismaService, EncryptionService, UsersService],
+            providers: [AuthService, PrismaService, EncryptionService],
+            imports: [UsersModule],
         }).compile();
 
         controller = module.get<AuthController>(AuthController);

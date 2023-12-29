@@ -1,8 +1,8 @@
 import {Test} from "@nestjs/testing";
 import {AuthGuard} from "./auth.guard";
-import {EncryptionService} from "../../encryption/encryption.service";
+import {EncryptionService} from "../../services/encryption.service";
 import {UsersService} from "../../users/users.service";
-import {PrismaService} from "../../prisma/prisma.service";
+import {PrismaService} from "../../services/prisma.service";
 
 describe("AuthGuard", () => {
     let authGuard: AuthGuard;

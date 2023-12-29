@@ -1,54 +1,30 @@
-import {CanActivate, ExecutionContext, HttpStatus, Injectable} from "@nestjs/common";
-import {EncryptionService} from "../../encryption/encryption.service";
+import {CanActivate, ExecutionContext, Injectable, NotFoundException, UnauthorizedException} from "@nestjs/common";
 import {JwtPayloadModel} from "../models/jwt-payload.model";
 import {UsersService} from "../../users/users.service";
 import {FastifyRequest} from "fastify";
+import {JwtService} from "../../services/jwt.service";
 
 @Injectable()
 export class AuthGuard implements CanActivate{
 
-    constructor(private encryptionService: EncryptionService, private usersService: UsersService){}
+    constructor(private jwtService: JwtService, private usersService: UsersService){}
 
     async canActivate(context: ExecutionContext): Promise<boolean>{
         const request = context.switchToHttp().getRequest();
-        const result = context.switchToHttp().getResponse();
         const token = this.extractTokenFromHeader(request);
-        if(!token){
-            result.status(HttpStatus.BAD_REQUEST);
-            result.send({
-                statusCode: HttpStatus.BAD_REQUEST,
-                message: "Missing bearer token"
-            });
-            return false;
-        }
-        let payload;
+        if(!token)
+            throw new UnauthorizedException("Missing bearer token");
+        let payload: JwtPayloadModel;
         try{
-            payload = <JwtPayloadModel>this.encryptionService.verifyJWT(token, process.env.JWT_KEY);
+            payload = <JwtPayloadModel>this.jwtService.verifyJWT(token, process.env.JWT_KEY);
         }catch (e){
-            result.status(HttpStatus.BAD_REQUEST);
-            result.send({
-                statusCode: HttpStatus.BAD_REQUEST,
-                message: "Invalid bearer token"
-            });
-            return false;
+            throw new UnauthorizedException("Invalid bearer token");
         }
-        if(!payload){
-            result.status(HttpStatus.BAD_REQUEST);
-            result.send({
-                statusCode: HttpStatus.BAD_REQUEST,
-                message: "Invalid bearer token"
-            });
-            return false;
-        }
+        if(!payload)
+            throw new UnauthorizedException("Invalid bearer token");
         const user = await this.usersService.findOne(payload.id);
-        if(!user){
-            result.status(HttpStatus.BAD_REQUEST);
-            result.send({
-                statusCode: HttpStatus.BAD_REQUEST,
-                message: "Invalid bearer token"
-            });
-            return false;
-        }
+        if(!user)
+            throw new NotFoundException("User not found");
         delete user.password;
         request.user = user;
         return true;

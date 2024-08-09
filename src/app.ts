@@ -11,6 +11,9 @@ import {SwaggerTheme, SwaggerThemeNameEnum} from "swagger-themes";
 import {LoggerMiddleware} from "./common/middlewares/logger.middleware";
 import {Logger} from "@nestjs/common";
 import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
+import fastifyCookie from "@fastify/cookie";
+import fastifyMultipart from "@fastify/multipart";
+import fastifyHelmet from "@fastify/helmet";
 
 dotenv.config();
 
@@ -82,6 +85,16 @@ async function loadServer(server: NestFastifyApplication<RawServerDefault>, serv
 
     // Middlewares
     server.use(new LoggerMiddleware().use);
+    await server.register(fastifyMultipart as any);
+    await server.register(fastifyCookie as any, {
+        secret: process.env.COOKIE_SECRET,
+    }as any);
+    await server.register(fastifyHelmet as any, {
+        contentSecurityPolicy: false,
+        crossOriginEmbedderPolicy: false,
+        crossOriginOpenerPolicy: false,
+        crossOriginResourcePolicy: false,
+    }as any);
 
     // Swagger
     const config = new DocumentBuilder()

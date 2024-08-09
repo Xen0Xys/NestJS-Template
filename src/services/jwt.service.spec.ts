@@ -25,18 +25,18 @@ describe("ServicesService", () => {
     const content = "test";
     describe("JWT tests", () => {
         it("Symmetric JWT", () => {
-            const token = service.generateJWT({content}, process.env.TOKEN_DURATION, process.env.JWT_KEY);
+            const token = service.generateJWT({content}, process.env.TOKEN_DURATION, process.env.JWT_SECRET);
             expect(typeof token).toBe("string");
-            const decoded = service.verifyJWT(token, process.env.JWT_KEY);
+            const decoded = service.verifyJWT(token, process.env.JWT_SECRET);
             expect(typeof decoded).toBe("object");
             expect(decoded).toHaveProperty("content");
         });
         it("Verify JWT with wrong key", async() => {
-            const token = service.generateJWT({content}, process.env.TOKEN_DURATION, process.env.JWT_KEY);
+            const token = service.generateJWT({content}, process.env.TOKEN_DURATION, process.env.JWT_SECRET);
             expect(() => service.verifyJWT(token, "wrong_key")).toThrow(Error);
         });
         it("Verify no JWT content", async() => {
-            expect(() => service.verifyJWT("invalid_content", process.env.JWT_KEY)).toThrow(Error);
+            expect(() => service.verifyJWT("invalid_content", process.env.JWT_SECRET)).toThrow(Error);
         });
         it("Asymmetric JWT", () => {
             const localKeyPair = encryptionService.generateKeyPair(2048);

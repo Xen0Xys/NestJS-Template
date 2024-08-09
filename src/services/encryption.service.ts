@@ -1,6 +1,7 @@
 import {Injectable} from "@nestjs/common";
 import * as argon2 from "argon2";
 import * as crypto from "crypto";
+import * as uuid from "uuid";
 
 
 @Injectable()
@@ -107,7 +108,38 @@ export class EncryptionService{
     }
 
     // Secret functions
-    generateSecret(bytes = 32): string{
+    /**
+     * Generate a random string
+     * @param bytes Number of bytes to generate
+     */
+    generateRandomBytes(bytes = 32): string{
         return crypto.randomBytes(bytes).toString("hex");
+    }
+
+    /**
+     * Generate a random number
+     * @param numbersNumber Number of numbers to generate
+     */
+    generateRandomNumbers(numbersNumber = 6): string{
+        return Array.from({length: numbersNumber}, () => Math.floor(Math.random() * 10)).join("");
+    }
+
+    /**
+     * Generate a UUID
+     * @param version UUID version
+     */
+    generateUuid(version: number = 4): string{
+        switch (version){
+            case 1:
+                return uuid.v1();
+            case 4:
+                return uuid.v4();
+            case 6:
+                return uuid.v6();
+            case 7:
+                return uuid.v7();
+            default:
+                throw new Error("Unsupported UUID version");
+        }
     }
 }

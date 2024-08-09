@@ -268,4 +268,40 @@ describe("EncryptionService", () => {
             expect(() => service.decryptAsymmetric(encrypted, keyPair.privateKey, "wrong_key")).toThrow("error:1C800064:Provider routines::bad decrypt");
         });
     });
+
+    describe("Generation tests", () => {
+        it("Generate random bytes", () => {
+            const random = service.generateRandomBytes(32);
+            expect(typeof random).toBe("string");
+            expect(random.length).toBe(64);
+        });
+        it("Generate random numbers", () => {
+            const random = service.generateRandomNumbers(32);
+            expect(typeof random).toBe("string");
+            expect(random.length).toBe(32);
+        });
+        it("Generate uuid v1", () => {
+            const uuid = service.generateUuid(1);
+            expect(typeof uuid).toBe("string");
+            expect(uuid.length).toBe(36);
+        });
+        it("Generate uuid v4", () => {
+            const uuid = service.generateUuid(4);
+            expect(typeof uuid).toBe("string");
+            expect(uuid.length).toBe(36);
+        });
+        it("Generate uuid v6", () => {
+            const uuid = service.generateUuid(6);
+            expect(typeof uuid).toBe("string");
+            expect(uuid.length).toBe(36);
+        });
+        it("Generate uuid v7", () => {
+            const uuid = service.generateUuid(7);
+            expect(typeof uuid).toBe("string");
+            expect(uuid.length).toBe(36);
+        });
+        it("Generate uuid with invalid version", () => {
+            expect(() => service.generateUuid(0)).toThrow(Error);
+        });
+    });
 });

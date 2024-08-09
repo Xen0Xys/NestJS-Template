@@ -5,7 +5,7 @@ import * as uuid from "uuid";
 
 
 @Injectable()
-export class EncryptionService{
+export class CipherService{
     // Hash functions
     getSum(content: string | Buffer): string{
         if(!content) content = "";
@@ -27,7 +27,51 @@ export class EncryptionService{
     }
 
     // Symmetric functions
-    encryptSymmetric(content: string, encryptionKey: string | Buffer, timeCost = 200000): string{
+    private prepareEncryptionKey(encryptionKey: string | Buffer): Buffer{
+        let keyBuffer: Buffer;
+        if (typeof encryptionKey === "string")
+            keyBuffer = Buffer.from(encryptionKey);
+        else
+            keyBuffer = encryptionKey;
+        const key = Buffer.alloc(64);
+        keyBuffer.copy(key);
+        return key;
+    }
+
+    cipherSymmetric(content: string, encryptionKey: string | Buffer): string{
+        if(!content) content = "";
+        return this.cipherBufferSymmetric(Buffer.from(content, "utf-8"), encryptionKey).toString("hex");
+    }
+
+    cipherBufferSymmetric(content: Buffer, encryptionKey: string | Buffer): Buffer{
+        if (!content) content = Buffer.alloc(0);
+        const iv = crypto.randomBytes(12);
+        const key = this.prepareEncryptionKey(encryptionKey);
+        const cipher = crypto.createCipheriv("aes-256-gcm", key.subarray(0, 32), iv);
+        const encrypted = Buffer.concat([cipher.update(content), cipher.final()]);
+        const tag = cipher.getAuthTag();
+        return Buffer.concat([iv, encrypted, tag]);
+    }
+
+    decipherSymmetric(encryptedContent: string, encryptionKey: string | Buffer): string{
+        return this.decipherBufferSymmetric(Buffer.from(encryptedContent, "hex"), encryptionKey).toString("utf-8");
+    }
+
+    decipherBufferSymmetric(encryptedContent: Buffer, encryptionKey: string | Buffer): Buffer{
+        const iv = encryptedContent.subarray(0, 12);
+        const encrypted = encryptedContent.subarray(12, encryptedContent.length - 16);
+        const tag = encryptedContent.subarray(encryptedContent.length - 16);
+        const key = this.prepareEncryptionKey(encryptionKey);
+        const decipher = crypto.createDecipheriv("aes-256-gcm", key.subarray(0, 32), iv);
+        decipher.setAuthTag(tag)
+        try{
+            return Buffer.concat([decipher.update(encrypted), decipher.final()]);
+        }catch (_){
+            throw new Error("Decryption failed");
+        }
+    }
+
+    cipherHardSymmetric(content: string, encryptionKey: string | Buffer, timeCost = 200000){
         if(!content) content = "";
         const salt = crypto.randomBytes(32);
         const key = crypto.pbkdf2Sync(encryptionKey, salt, timeCost, 64, "sha512");
@@ -41,7 +85,7 @@ export class EncryptionService{
         return `${salt.toString("hex")}:${iv.toString("hex")}:${encrypted}:${digest}`;
     }
 
-    decryptSymmetric(encryptedContent: string, encryptionKey: string | Buffer, timeCost = 200000): string{
+    decipherHardSymmetric(encryptedContent: string, encryptionKey: string | Buffer, timeCost = 200000){
         const [saltString, ivString, encryptedString, digest] = encryptedContent.split(":");
         const salt = Buffer.from(saltString, "hex");
         const key = crypto.pbkdf2Sync(encryptionKey, salt, timeCost, 64, "sha512");

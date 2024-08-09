@@ -1,5 +1,5 @@
 import {Body, Controller, HttpCode, HttpStatus, NotFoundException, Post, UnauthorizedException} from "@nestjs/common";
-import {EncryptionService} from "../services/encryption.service";
+import {CipherService} from "../services/cipher.service";
 import {TokenResponseModel} from "./models/token-response.model";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UsersService} from "../users/users.service";
@@ -11,7 +11,7 @@ import {AuthService} from "./auth.service";
 export class AuthController{
     constructor(
         private readonly usersService: UsersService,
-        private readonly encryptionService: EncryptionService,
+        private readonly encryptionService: CipherService,
         private readonly authService: AuthService
     ){}
 

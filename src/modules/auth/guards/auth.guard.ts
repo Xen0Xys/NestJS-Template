@@ -2,7 +2,7 @@ import {CanActivate, ExecutionContext, Injectable, NotFoundException, Unauthoriz
 import {JwtPayloadModel} from "../models/jwt-payload.model";
 import {UsersService} from "../../users/users.service";
 import {FastifyRequest} from "fastify";
-import {JwtService} from "../../services/jwt.service";
+import {JwtService} from "../../../common/services/jwt.service";
 import {ConfigService} from "@nestjs/config";
 
 @Injectable()

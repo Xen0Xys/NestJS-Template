@@ -63,7 +63,7 @@ export class CipherService{
         const tag = encryptedContent.subarray(encryptedContent.length - 16);
         const key = this.prepareEncryptionKey(encryptionKey);
         const decipher = crypto.createDecipheriv("aes-256-gcm", key.subarray(0, 32), iv);
-        decipher.setAuthTag(tag)
+        decipher.setAuthTag(tag);
         try{
             return Buffer.concat([decipher.update(encrypted), decipher.final()]);
         }catch (_){

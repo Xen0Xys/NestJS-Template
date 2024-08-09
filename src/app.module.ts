@@ -1,7 +1,7 @@
 import {MailerModule} from "@nestjs-modules/mailer";
 import {ThrottlerModule} from "@nestjs/throttler";
-import {UsersModule} from "./users/users.module";
-import {AuthModule} from "./auth/auth.module";
+import {UsersModule} from "./modules/users/users.module";
+import {AuthModule} from "./modules/auth/auth.module";
 import {ConfigModule} from "@nestjs/config";
 import {Module} from "@nestjs/common";
 import * as dotenv from "dotenv";

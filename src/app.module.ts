@@ -1,8 +1,9 @@
-import {MailerModule} from "@nestjs-modules/mailer";
-import {ThrottlerModule} from "@nestjs/throttler";
+import {FilesModule} from "./modules/files/files.module";
 import {UsersModule} from "./modules/users/users.module";
 import {AuthModule} from "./modules/auth/auth.module";
 import {CronModule} from "./modules/cron/cron.module";
+import {MailerModule} from "@nestjs-modules/mailer";
+import {ThrottlerModule} from "@nestjs/throttler";
 import {ScheduleModule} from "@nestjs/schedule";
 import {ConfigModule} from "@nestjs/config";
 import {Module} from "@nestjs/common";
@@ -30,7 +31,8 @@ dotenv.config();
         }),
         CronModule,
         UsersModule,
-        AuthModule
+        AuthModule,
+        FilesModule,
     ]
 })
 export class AppModule{}

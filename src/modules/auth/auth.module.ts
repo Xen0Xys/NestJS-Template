@@ -9,6 +9,6 @@ import {Module} from "@nestjs/common";
     controllers: [AuthController],
     providers: [AuthService, AuthGuard],
     imports: [UsersModule, ServicesModule],
-    exports: [AuthGuard]
+    exports: [AuthGuard, UsersModule]
 })
 export class AuthModule{}

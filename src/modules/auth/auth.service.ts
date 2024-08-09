@@ -8,6 +8,6 @@ export class AuthService{
     ){}
 
     getToken(userId: number){
-        return this.jwtService.generateJWT({id: userId}, process.env.TOKEN_DURATION, process.env.JWT_KEY);
+        return this.jwtService.generateJWT({id: userId}, process.env.TOKEN_DURATION, process.env.JWT_SECRET);
     }
 }

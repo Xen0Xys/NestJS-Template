@@ -17,7 +17,7 @@ export class AuthGuard implements CanActivate{
         let payload: JwtPayloadModel;
         try{
             payload = <JwtPayloadModel>this.jwtService.verifyJWT(token, process.env.JWT_KEY);
-        }catch (e){
+        }catch (_){
             throw new UnauthorizedException("Invalid bearer token");
         }
         if(!payload)

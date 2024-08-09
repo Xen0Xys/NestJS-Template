@@ -3,7 +3,7 @@ import {CipherService} from "../../common/services/cipher.service";
 import {TokenResponseModel} from "./models/token-response.model";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UsersService} from "../users/users.service";
-import {LoginUserDto} from "./dto/login-user.dto";
+import {LoginDto} from "./dto/login.dto";
 import {AuthService} from "./auth.service";
 
 @Controller("auth")
@@ -21,7 +21,7 @@ export class AuthController{
     @ApiResponse({status: HttpStatus.NOT_FOUND, description: "User not found"})
     @ApiResponse({status: HttpStatus.UNAUTHORIZED, description: "Invalid password"})
     @ApiResponse({status: HttpStatus.BAD_REQUEST, description: "Invalid request body"})
-    async login(@Body() loginUserDto: LoginUserDto){
+    async login(@Body() loginUserDto: LoginDto){
         const user = await this.usersService.getUserByUsername(loginUserDto.username);
         if(!user)
             throw new NotFoundException("User not found");

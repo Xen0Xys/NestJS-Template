@@ -1,6 +1,6 @@
 import {Injectable} from "@nestjs/common";
-import * as crypto from "crypto";
 import * as argon2 from "argon2";
+import * as crypto from "crypto";
 
 
 @Injectable()
@@ -11,7 +11,7 @@ export class EncryptionService{
         return crypto.createHash("sha256").update(content).digest("hex");
     }
 
-    async hashPassword(content: string | Buffer, cost = 10){
+    async hashPassword(content: string | Buffer, cost = 10): Promise<string>{
         if(!content) content = "";
         return await argon2.hash(content, {
             type: argon2.argon2id,
@@ -19,14 +19,14 @@ export class EncryptionService{
         });
     }
 
-    async comparePassword(hash: string, content: string | Buffer){
+    async comparePassword(hash: string, content: string | Buffer): Promise<boolean>{
         if(!hash) return false;
         if(!content) content = "";
         return await argon2.verify(hash, content);
     }
 
     // Symmetric functions
-    encryptSymmetric(content: string, encryptionKey: string | Buffer, timeCost = 200000){
+    encryptSymmetric(content: string, encryptionKey: string | Buffer, timeCost = 200000): string{
         if(!content) content = "";
         const salt = crypto.randomBytes(32);
         const key = crypto.pbkdf2Sync(encryptionKey, salt, timeCost, 64, "sha512");
@@ -40,7 +40,7 @@ export class EncryptionService{
         return `${salt.toString("hex")}:${iv.toString("hex")}:${encrypted}:${digest}`;
     }
 
-    decryptSymmetric(encryptedContent: string, encryptionKey: string | Buffer, timeCost = 200000){
+    decryptSymmetric(encryptedContent: string, encryptionKey: string | Buffer, timeCost = 200000): string{
         const [saltString, ivString, encryptedString, digest] = encryptedContent.split(":");
         const salt = Buffer.from(saltString, "hex");
         const key = crypto.pbkdf2Sync(encryptionKey, salt, timeCost, 64, "sha512");
@@ -57,7 +57,7 @@ export class EncryptionService{
     }
 
     // Asymmetric functions
-    generateKeyPair(modulusLength = 4096, privateEncryptionKey = null){
+    generateKeyPair(modulusLength = 4096, privateEncryptionKey = null): crypto.KeyPairSyncResult<string, string>{
         if(!privateEncryptionKey)
             console.warn("No private encryption key provided, the private key will not be encrypted");
         let options = undefined;
@@ -81,7 +81,7 @@ export class EncryptionService{
         });
     }
 
-    encryptAsymmetric(content: string, publicKey: string | Buffer){
+    encryptAsymmetric(content: string, publicKey: string | Buffer): string{
         if(!content) content = "";
         const buffer = Buffer.from(content, "utf-8");
         const encrypted = crypto.publicEncrypt({
@@ -91,7 +91,7 @@ export class EncryptionService{
         return encrypted.toString("base64");
     }
 
-    decryptAsymmetric(encryptedContent: string, privateKey: string | Buffer, privateEncryptionKey = undefined){
+    decryptAsymmetric(encryptedContent: string, privateKey: string | Buffer, privateEncryptionKey = undefined): string{
         const buffer = Buffer.from(encryptedContent, "base64");
         if(!privateEncryptionKey)
             return crypto.privateDecrypt({
@@ -107,7 +107,7 @@ export class EncryptionService{
     }
 
     // Secret functions
-    generateSecret(length = 32){
-        return crypto.randomBytes(length).toString("hex");
+    generateSecret(bytes = 32): string{
+        return crypto.randomBytes(bytes).toString("hex");
     }
 }

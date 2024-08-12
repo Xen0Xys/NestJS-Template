@@ -1,9 +1,9 @@
 import {Body, Controller, HttpCode, HttpStatus, NotFoundException, Post, UnauthorizedException} from "@nestjs/common";
-import {EncryptionService} from "../services/encryption.service";
+import {CipherService} from "../../common/services/cipher.service";
 import {TokenResponseModel} from "./models/token-response.model";
 import {ApiResponse, ApiTags} from "@nestjs/swagger";
 import {UsersService} from "../users/users.service";
-import {LoginUserDto} from "./dto/login-user.dto";
+import {LoginDto} from "./dto/login.dto";
 import {AuthService} from "./auth.service";
 
 @Controller("auth")
@@ -11,8 +11,8 @@ import {AuthService} from "./auth.service";
 export class AuthController{
     constructor(
         private readonly usersService: UsersService,
-        private readonly encryptionService: EncryptionService,
-        private readonly authService: AuthService
+        private readonly encryptionService: CipherService,
+        private readonly authService: AuthService,
     ){}
 
     @Post("login")
@@ -21,7 +21,7 @@ export class AuthController{
     @ApiResponse({status: HttpStatus.NOT_FOUND, description: "User not found"})
     @ApiResponse({status: HttpStatus.UNAUTHORIZED, description: "Invalid password"})
     @ApiResponse({status: HttpStatus.BAD_REQUEST, description: "Invalid request body"})
-    async login(@Body() loginUserDto: LoginUserDto){
+    async login(@Body() loginUserDto: LoginDto){
         const user = await this.usersService.getUserByUsername(loginUserDto.username);
         if(!user)
             throw new NotFoundException("User not found");

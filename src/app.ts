@@ -1,19 +1,19 @@
 import {FastifyAdapter, NestFastifyApplication} from "@nestjs/platform-fastify";
+import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
+import {LoggerMiddleware} from "./common/middlewares/logger.middleware";
+import {SwaggerTheme, SwaggerThemeNameEnum} from "swagger-themes";
 import {DocumentBuilder, SwaggerModule} from "@nestjs/swagger";
+import fastifyMultipart from "@fastify/multipart";
+import fastifyCookie from "@fastify/cookie";
+import fastifyHelmet from "@fastify/helmet";
 import {RawServerDefault} from "fastify";
 import {NestFactory} from "@nestjs/core";
 import {AppModule} from "./app.module";
+import {Logger} from "@nestjs/common";
 import * as process from "process";
 import * as dotenv from "dotenv";
 import * as fs from "fs";
 import * as os from "os";
-import {SwaggerTheme, SwaggerThemeNameEnum} from "swagger-themes";
-import {LoggerMiddleware} from "./common/middlewares/logger.middleware";
-import {Logger} from "@nestjs/common";
-import {CustomValidationPipe} from "./common/pipes/custom-validation.pipe";
-import fastifyCookie from "@fastify/cookie";
-import fastifyMultipart from "@fastify/multipart";
-import fastifyHelmet from "@fastify/helmet";
 
 dotenv.config();
 
@@ -58,9 +58,9 @@ function logServerStart(bindAddress: string, port: string | number, protocol: st
 
 async function startHttpServer(){
     const httpApp = await NestFactory.create<NestFastifyApplication>(AppModule , new FastifyAdapter({exposeHeadRoutes: true}));
-    await loadServer(httpApp, getServerAddress(process.env.BIND_ADDRESS, process.env.HTTP_PORT, "http"));
-    await httpApp.listen(process.env.HTTP_PORT, process.env.BIND_ADDRESS);
-    logServerStart(process.env.BIND_ADDRESS, process.env.HTTP_PORT, "http");
+    await loadServer(httpApp);
+    await httpApp.listen(process.env.SERVER_PORT, process.env.SERVER_ADDRESS);
+    logServerStart(process.env.SERVER_ADDRESS, process.env.SERVER_PORT, "http");
 }
 
 async function startHttpsServer(){
@@ -70,13 +70,12 @@ async function startHttpsServer(){
         cert: fs.readFileSync(process.env.SSL_CERT_FILE),
     };
     const httpsApp = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter({http2: true, https: httpsOptions}));
-    await loadServer(httpsApp, getServerAddress(process.env.BIND_ADDRESS, process.env.HTTP_PORT, "https"));
-    await httpsApp.listen(process.env.HTTPS_PORT, process.env.BIND_ADDRESS);
-    logServerStart(process.env.BIND_ADDRESS, process.env.HTTPS_PORT, "https");
+    await loadServer(httpsApp);
+    await httpsApp.listen(process.env.SERVER_PORT, process.env.SERVER_ADDRESS);
+    logServerStart(process.env.SERVER_ADDRESS, process.env.SERVER_PORT, "https");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-async function loadServer(server: NestFastifyApplication<RawServerDefault>, serverAddress: string){
+async function loadServer(server: NestFastifyApplication<RawServerDefault>){
     // Config
     server.setGlobalPrefix(process.env.PREFIX);
     server.enableCors({

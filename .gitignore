@@ -245,3 +245,4 @@ fabric.properties
 keys/
 .jest/
 prisma/migrations/
+uploads/

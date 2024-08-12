@@ -18,6 +18,7 @@ model User {
   group_id   Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+  files      File[]
 
   @@map("users")
 }
@@ -30,4 +31,15 @@ model Group {
   updated_at DateTime @updatedAt
 
   @@map("groups")
+}
+
+model File {
+  id      Int    @id @default(autoincrement())
+  sum     String @unique
+  name    String
+  size    Int
+  user_id Int
+  user    User   @relation(fields: [user_id], references: [id])
+
+  @@map("files")
 }

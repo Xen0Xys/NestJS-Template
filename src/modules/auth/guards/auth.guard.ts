@@ -2,12 +2,17 @@ import {CanActivate, ExecutionContext, Injectable, NotFoundException, Unauthoriz
 import {JwtPayloadModel} from "../models/jwt-payload.model";
 import {UsersService} from "../../users/users.service";
 import {FastifyRequest} from "fastify";
-import {JwtService} from "../../services/jwt.service";
+import {JwtService} from "../../../common/services/jwt.service";
+import {ConfigService} from "@nestjs/config";
 
 @Injectable()
 export class AuthGuard implements CanActivate{
 
-    constructor(private jwtService: JwtService, private usersService: UsersService){}
+    constructor(
+        private configService: ConfigService,
+        private jwtService: JwtService,
+        private usersService: UsersService
+    ){}
 
     async canActivate(context: ExecutionContext): Promise<boolean>{
         const request = context.switchToHttp().getRequest();
@@ -16,7 +21,7 @@ export class AuthGuard implements CanActivate{
             throw new UnauthorizedException("Missing bearer token");
         let payload: JwtPayloadModel;
         try{
-            payload = <JwtPayloadModel>this.jwtService.verifyJWT(token, process.env.JWT_KEY);
+            payload = <JwtPayloadModel>this.jwtService.verifyJWT(token, this.configService.get("JWT_SECRET"));
         }catch (_){
             throw new UnauthorizedException("Invalid bearer token");
         }

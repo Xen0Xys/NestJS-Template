@@ -1,5 +1,5 @@
 import {Test, TestingModule} from "@nestjs/testing";
-import {EncryptionService} from "./encryption.service";
+import {CipherService} from "./cipher.service";
 import * as dotenv from "dotenv";
 import {AssertionError} from "node:assert";
 import * as crypto from "crypto";
@@ -7,14 +7,14 @@ import * as crypto from "crypto";
 dotenv.config({path: ".env.ci"});
 
 describe("EncryptionService", () => {
-    let service: EncryptionService;
+    let service: CipherService;
 
     beforeEach(async() => {
         const module: TestingModule = await Test.createTestingModule({
-            providers: [EncryptionService],
+            providers: [CipherService],
         }).compile();
 
-        service = module.get<EncryptionService>(EncryptionService);
+        service = module.get<CipherService>(CipherService);
     });
 
     it("should be defined", () => {
@@ -77,50 +77,85 @@ describe("EncryptionService", () => {
         });
     });
 
-    const encryptCost = 10000;
-    describe("Symmetric encryption tests", () => {
-        it("Encrypt content", () => {
-            const encrypted = service.encryptSymmetric(content, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
+    describe("Symmetric cipher tests", () => {
+        it("Cipher content", () => {
+            const encrypted = service.cipherSymmetric(content, process.env.SYMMETRIC_ENCRYPTION_KEY);
             expect(typeof encrypted).toBe("string");
-            const decrypted = service.decryptSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
+            const decrypted = service.decipherSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY);
             expect(typeof decrypted).toBe("string");
             expect(decrypted.length).toBe(content.length);
             expect(decrypted).toBe(content);
         });
-        it("Decrypt symmetric with wrong key", () => {
-            const encrypted = service.encryptSymmetric(content, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
-            expect(() => service.decryptSymmetric(encrypted, "wrong_key", encryptCost)).toThrow(Error);
+        it("Decipher symmetric with wrong key", () => {
+            const encrypted = service.cipherSymmetric(content, process.env.SYMMETRIC_ENCRYPTION_KEY);
+            expect(() => service.decipherSymmetric(encrypted, "wrong_key")).toThrow(Error);
         });
-        it("Encrypt symmetric with negative time cost", () => {
-            expect(() => service.encryptSymmetric(content, process.env.SYMMETRIC_ENCRYPTION_KEY, -1)).toThrow("The value of \"iterations\" is out of range. It must be >= 1 && <= 2147483647. Received -1");
-        });
-        it("Decrypt symmetric with negative time cost", () => {
-            const encrypted = service.encryptSymmetric(content, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
-            expect(() => service.decryptSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, -1)).toThrow("The value of \"iterations\" is out of range. It must be >= 1 && <= 2147483647. Received -1");
-        });
-        it("Encrypt content with empty content", () => {
-            const encrypted = service.encryptSymmetric("", process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
+        it("Cipher content with empty content", () => {
+            const encrypted = service.cipherSymmetric("", process.env.SYMMETRIC_ENCRYPTION_KEY);
             expect(typeof encrypted).toBe("string");
-            expect(encrypted.length).toBe(195);
-            const decrypted = service.decryptSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
+            expect(encrypted.length).toBe(56);
+            const decrypted = service.decipherSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY);
             expect(typeof decrypted).toBe("string");
             expect(decrypted.length).toBe(0);
             expect(decrypted).toBe("");
         });
-        it("Encrypt content with null content", () => {
-            const encrypted = service.encryptSymmetric(null, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
+        it("Cipher content with null content", () => {
+            const encrypted = service.cipherSymmetric(null, process.env.SYMMETRIC_ENCRYPTION_KEY);
             expect(typeof encrypted).toBe("string");
-            expect(encrypted.length).toBe(195);
-            const decrypted = service.decryptSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
+            expect(encrypted.length).toBe(56);
+            const decrypted = service.decipherSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY);
             expect(typeof decrypted).toBe("string");
             expect(decrypted.length).toBe(0);
             expect(decrypted).toBe("");
         });
-        it("Encrypt content with undefined content", () => {
-            const encrypted = service.encryptSymmetric(undefined, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
+        it("Cipher content with undefined content", () => {
+            const encrypted = service.cipherSymmetric(undefined, process.env.SYMMETRIC_ENCRYPTION_KEY);
+            expect(typeof encrypted).toBe("string");
+            expect(encrypted.length).toBe(56);
+            const decrypted = service.decipherSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY);
+            expect(typeof decrypted).toBe("string");
+            expect(decrypted.length).toBe(0);
+            expect(decrypted).toBe("");
+        });
+    });
+
+    const TIME_COST = 10000;
+    describe("Symmetric hard cipher tests", () => {
+        it("Hard cipher content", () => {
+            const encrypted = service.cipherHardSymmetric(content, process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
+            expect(typeof encrypted).toBe("string");
+            const decrypted = service.decipherHardSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
+            expect(typeof decrypted).toBe("string");
+            expect(decrypted.length).toBe(content.length);
+            expect(decrypted).toBe(content);
+        });
+        it("Hard decipher symmetric with wrong key", () => {
+            const encrypted = service.cipherHardSymmetric(content, process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
+            expect(() => service.decipherHardSymmetric(encrypted, "wrong_key")).toThrow(Error);
+        });
+        it("Hard cipher content with empty content", () => {
+            const encrypted = service.cipherHardSymmetric("", process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
             expect(typeof encrypted).toBe("string");
             expect(encrypted.length).toBe(195);
-            const decrypted = service.decryptSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, encryptCost);
+            const decrypted = service.decipherHardSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
+            expect(typeof decrypted).toBe("string");
+            expect(decrypted.length).toBe(0);
+            expect(decrypted).toBe("");
+        });
+        it("Hard decipher content with null content", () => {
+            const encrypted = service.cipherHardSymmetric(null, process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
+            expect(typeof encrypted).toBe("string");
+            expect(encrypted.length).toBe(195);
+            const decrypted = service.decipherHardSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
+            expect(typeof decrypted).toBe("string");
+            expect(decrypted.length).toBe(0);
+            expect(decrypted).toBe("");
+        });
+        it("Hard decipher content with undefined content", () => {
+            const encrypted = service.cipherHardSymmetric(undefined, process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
+            expect(typeof encrypted).toBe("string");
+            expect(encrypted.length).toBe(195);
+            const decrypted = service.decipherHardSymmetric(encrypted, process.env.SYMMETRIC_ENCRYPTION_KEY, TIME_COST);
             expect(typeof decrypted).toBe("string");
             expect(decrypted.length).toBe(0);
             expect(decrypted).toBe("");
@@ -266,6 +301,42 @@ describe("EncryptionService", () => {
             keyPair = service.generateKeyPair(1024, process.env.ASYMMETRIC_ENCRYPTION_KEY);
             const encrypted = service.encryptAsymmetric(content, keyPair.publicKey);
             expect(() => service.decryptAsymmetric(encrypted, keyPair.privateKey, "wrong_key")).toThrow("error:1C800064:Provider routines::bad decrypt");
+        });
+    });
+
+    describe("Generation tests", () => {
+        it("Generate random bytes", () => {
+            const random = service.generateRandomBytes(32);
+            expect(typeof random).toBe("string");
+            expect(random.length).toBe(64);
+        });
+        it("Generate random numbers", () => {
+            const random = service.generateRandomNumbers(32);
+            expect(typeof random).toBe("string");
+            expect(random.length).toBe(32);
+        });
+        it("Generate uuid v1", () => {
+            const uuid = service.generateUuid(1);
+            expect(typeof uuid).toBe("string");
+            expect(uuid.length).toBe(36);
+        });
+        it("Generate uuid v4", () => {
+            const uuid = service.generateUuid(4);
+            expect(typeof uuid).toBe("string");
+            expect(uuid.length).toBe(36);
+        });
+        it("Generate uuid v6", () => {
+            const uuid = service.generateUuid(6);
+            expect(typeof uuid).toBe("string");
+            expect(uuid.length).toBe(36);
+        });
+        it("Generate uuid v7", () => {
+            const uuid = service.generateUuid(7);
+            expect(typeof uuid).toBe("string");
+            expect(uuid.length).toBe(36);
+        });
+        it("Generate uuid with invalid version", () => {
+            expect(() => service.generateUuid(0)).toThrow(Error);
         });
     });
 });

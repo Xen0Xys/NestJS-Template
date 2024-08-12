@@ -1,36 +1,36 @@
 import {PrismaClient} from "@prisma/client";
+import groupsFunction from "./seeds/groups.seed";
+import usersFunction from "./seeds/users.seed";
 
 // initialize Prisma Client
 const prisma = new PrismaClient();
 
 async function main(){
-    const defaultGroup = await prisma.group.upsert({
-        where: {name: "default"},
-        update: {},
-        create: {
-            name: "default",
-        },
-    });
+    const gStart = Date.now();
 
-    const adminGroup = await prisma.group.upsert({
-        where: {name: "admin"},
-        update: {},
-        create: {
-            name: "admin",
-        },
-    });
+    let start = Date.now();
+    await seed(prisma.group, groupsFunction());
+    console.log("✅  User seed done ! (" + (Date.now() - start) + "ms)");
 
-    const admin = await prisma.user.upsert({
-        where: {username: "admin"},
-        update: {},
-        create: {
-            username: "admin",
-            password: "$argon2id$v=19$m=12,t=10,p=1$emxtN2RndHBvenAwMDAwMA$Ecz+bRSpVdiq9BMMJbOfAw",
-            group_id: adminGroup.id,
-        },
-    });
+    start = Date.now();
+    await seed(prisma.user, await usersFunction());
+    console.log("✅  Todo list seed done ! (" + (Date.now() - start) + "ms)");
 
-    console.log({defaultGroup, adminGroup, admin});
+    console.log(`\n✅  Seeding completed ! (${Date.now() - gStart}ms)`);
+}
+
+async function seed(table: any, data: any[]){
+    for(let i = 1; i <= data.length; i++){
+        await table.upsert({
+            where: {id: i},
+            update: {
+                ...data[i - 1],
+            },
+            create: {
+                ...data[i - 1],
+            },
+        });
+    }
 }
 
 main().catch((e) => {

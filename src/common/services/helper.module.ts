@@ -1,24 +1,19 @@
 import {CipherService} from "./cipher.service";
 import {PrismaService} from "./prisma.service";
-import {EmailService} from "./email.service";
-import {TotpService} from "./totp.service";
+import {Global, Module} from "@nestjs/common";
 import {JwtService} from "./jwt.service";
-import {Module} from "@nestjs/common";
 
+@Global()
 @Module({
     providers: [
         CipherService,
-        EmailService,
         JwtService,
         PrismaService,
-        TotpService,
     ],
     exports: [
         CipherService,
-        EmailService,
         JwtService,
         PrismaService,
-        TotpService,
-    ]
+    ],
 })
-export class ServicesModule{}
+export class HelperModule{}

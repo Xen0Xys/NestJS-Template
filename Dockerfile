@@ -1,20 +1,23 @@
-FROM node:21
-
-LABEL authors="Xen0Xys"
+FROM node:22-alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY prisma ./prisma/
+RUN apk add --no-cache openssl ffmpeg
 
+COPY package*.json pnpm-lock.yaml ./
 COPY tsconfig.json ./
+
+RUN corepack enable && pnpm install --frozen-lockfile
+
+COPY prisma ./prisma/
+RUN pnpm dlx prisma generate
 
 COPY . .
 
-RUN npm install -g pnpm && pnpm install
+ENV NODE_ENV=production
 
-RUN pnpx prisma generate
+RUN pnpm run build
 
-EXPOSE 3000
+EXPOSE 4000
 
-CMD pnpx prisma migrate deploy && pnpx prisma db seed && pnpm start
+CMD pnpm dlx prisma migrate deploy && npx prisma db seed && pnpm run start:prod

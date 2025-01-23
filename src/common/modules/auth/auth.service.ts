@@ -1,8 +1,8 @@
 import {Injectable, NotFoundException, UnauthorizedException} from "@nestjs/common";
 import {PrismaService} from "../helper/prisma.service";
 import {CipherService} from "../helper/cipher.service";
+import {JwtService} from "@nestjs/jwt";
 import {Users} from "@prisma/client";
-import {JwtService} from "../helper/jwt.service";
 
 @Injectable()
 export class AuthService{
@@ -11,6 +11,17 @@ export class AuthService{
         private readonly cipherService: CipherService,
         private readonly jwtService: JwtService,
     ){}
+
+    async getUserById(id: string): Promise<Users>{
+        const user: Users = await this.prismaService.users.findUnique({
+            where: {
+                id: id,
+            },
+        });
+        if(!user)
+            throw new NotFoundException("User not found");
+        return user;
+    }
 
     async validateUser(username: string, password: string): Promise<Users>{
         const user: Users = await this.prismaService.users.findUnique({
@@ -25,7 +36,7 @@ export class AuthService{
         return user;
     }
 
-    generateJwt(user: Users){
-        return this.jwtService.generateJWT({id: user.id}, "7d", process.env.APP_KEY || "couscous");
+    generateJwt(user: Users): string{
+        return this.jwtService.sign({sub: user.id});
     }
 }

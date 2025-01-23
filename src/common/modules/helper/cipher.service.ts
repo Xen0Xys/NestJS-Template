@@ -1,28 +1,23 @@
 import {Injectable} from "@nestjs/common";
-import * as argon2 from "argon2";
 import * as crypto from "crypto";
-import * as uuid from "uuid";
 
 @Injectable()
 export class CipherService{
     // Hash functions
-    getSum(content: string | Buffer): string{
+    getSum(content: Bun.BlobOrStringOrBuffer): string{
         if(!content) content = "";
-        return crypto.createHash("sha256").update(content).digest("hex");
+        return new Bun.CryptoHasher("sha256").update(content).digest().toString("hex");
     }
 
-    async hashPassword(content: string | Buffer, cost = 10): Promise<string>{
-        if(!content) content = "";
-        return await argon2.hash(content, {
-            type: argon2.argon2id,
+    hashPassword(content: Bun.StringOrBuffer, cost = 10): string{
+        return Bun.password.hashSync(content, {
+            algorithm: "argon2id",
             timeCost: cost,
         });
     }
 
-    async comparePassword(hash: string, content: string | Buffer): Promise<boolean>{
-        if(!hash) return false;
-        if(!content) content = "";
-        return await argon2.verify(hash, content);
+    comparePassword(password: Bun.StringOrBuffer, hash: string): boolean{
+        return Bun.password.verifySync(password, hash);
     }
 
     // Symmetric functions
@@ -165,24 +160,5 @@ export class CipherService{
      */
     generateRandomNumbers(numbersNumber = 6): string{
         return Array.from({length: numbersNumber}, () => Math.floor(Math.random() * 10)).join("");
-    }
-
-    /**
-     * Generate a UUID
-     * @param version UUID version
-     */
-    generateUuid(version: number = 4): string{
-        switch (version){
-            case 1:
-                return uuid.v1();
-            case 4:
-                return uuid.v4();
-            case 6:
-                return uuid.v6();
-            case 7:
-                return uuid.v7();
-            default:
-                throw new Error("Unsupported UUID version");
-        }
     }
 }

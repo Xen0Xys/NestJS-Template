@@ -1,16 +1,14 @@
 import {ClassSerializerInterceptor, Module} from "@nestjs/common";
-import {HelperModule} from "./common/services/helper.module";
-import {CacheModule} from "@nestjs/cache-manager";
+import {HelperModule} from "./common/modules/helper/helper.module";
 import {ThrottlerModule} from "@nestjs/throttler";
 import {ScheduleModule} from "@nestjs/schedule";
 import {AppController} from "./app.controller";
 import {APP_INTERCEPTOR} from "@nestjs/core";
-import {ConfigModule, ConfigService} from "@nestjs/config";
-import * as dotenv from "dotenv";
-import KeyvRedis, {Keyv} from "@keyv/redis";
+import {ConfigModule} from "@nestjs/config";
+import {CacheModule} from "@nestjs/cache-manager";
+import KeyvRedis from "@keyv/redis";
 import {CacheableMemory} from "cacheable";
-
-dotenv.config();
+import {AuthModule} from "./common/modules/auth/auth.module";
 
 @Module({
     controllers: [AppController],
@@ -23,23 +21,21 @@ dotenv.config();
         }]),
         ScheduleModule.forRoot(),
         CacheModule.registerAsync({
-            imports: [ConfigModule],
-            inject: [ConfigService],
             isGlobal: true,
-            useFactory: async(configService: ConfigService) => {
-                const redisUrl = configService.get("REDIS_URL");
+            useFactory: async(): Promise<any> => {
+                const redisUrl = process.env.REDIS_URL;
                 return {
                     stores: [
                         redisUrl
                             ? new KeyvRedis(redisUrl)
-                            : new Keyv({
-                                store: new CacheableMemory(),
-                            }),
+                            : new CacheableMemory(),
+                        // new Keyv(),
                     ],
                 };
             },
         }),
         HelperModule,
+        AuthModule,
     ],
     providers: [
         {

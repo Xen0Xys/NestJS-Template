@@ -5,15 +5,18 @@ import {LoginGuard} from "./guards/login.guard";
 import {LoginDto} from "./models/dto/login.dto";
 import {ApiBearerAuth} from "@nestjs/swagger";
 import {AuthService} from "./auth.service";
+import {EmailsService} from "../emails/emails.service";
 
 @Controller("auth")
 export class AuthController{
     constructor(
         private readonly authService: AuthService,
+        private readonly emailsService: EmailsService,
     ){}
 
     @Post("register")
-    register(){
+    async register(){
+        await this.emailsService.sendMail("red57101@gmail.com", "Welcome", "Welcome to our app!");
         return "Register";
     }
 

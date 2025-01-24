@@ -1,14 +1,15 @@
-import {ClassSerializerInterceptor, Module} from "@nestjs/common";
 import {HelperModule} from "./common/modules/helper/helper.module";
+import {EmailsModule} from "./common/modules/emails/emails.module";
+import {ClassSerializerInterceptor, Module} from "@nestjs/common";
+import {AuthModule} from "./common/modules/auth/auth.module";
 import {ThrottlerModule} from "@nestjs/throttler";
+import {CacheModule} from "@nestjs/cache-manager";
 import {ScheduleModule} from "@nestjs/schedule";
 import {AppController} from "./app.controller";
 import {APP_INTERCEPTOR} from "@nestjs/core";
 import {ConfigModule} from "@nestjs/config";
-import {CacheModule} from "@nestjs/cache-manager";
-import KeyvRedis from "@keyv/redis";
 import {CacheableMemory} from "cacheable";
-import {AuthModule} from "./common/modules/auth/auth.module";
+import KeyvRedis from "@keyv/redis";
 
 @Module({
     controllers: [AppController],
@@ -23,16 +24,20 @@ import {AuthModule} from "./common/modules/auth/auth.module";
         CacheModule.registerAsync({
             isGlobal: true,
             useFactory: async(): Promise<any> => {
-                const redisUrl = process.env.REDIS_URL;
+                const redisUrl: string | undefined = process.env.REDIS_URL;
                 return {
                     stores: [
                         redisUrl
                             ? new KeyvRedis(redisUrl)
                             : new CacheableMemory(),
-                        // new Keyv(),
                     ],
                 };
             },
+        }),
+        EmailsModule.forRoot({
+            isGlobal: true,
+            url: process.env.EMAIL_URL,
+            from: process.env.EMAIL_FROM,
         }),
         HelperModule,
         AuthModule,

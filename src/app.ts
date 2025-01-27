@@ -13,8 +13,6 @@ import {Logger} from "@nestjs/common";
 import * as process from "process";
 import {join} from "node:path";
 
-declare const module: any;
-
 const logger: Logger = new Logger("App");
 
 const appName: string = process.env.npm_package_name.split("-").map((word: string): string => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
@@ -32,10 +30,6 @@ async function bootstrap(){
         host: "0.0.0.0",
     } as FastifyListenOptions);
     app.enableShutdownHooks();
-    // if(module.hot){
-    //     module.hot.accept();
-    //     module.hot.dispose(() => app.close());
-    // }
     logger.log(`Listening on http://0.0.0.0:${port}`);
 }
 

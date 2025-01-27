@@ -14,7 +14,7 @@ export class PrismaService extends PrismaClient implements OnModuleInit{
                     const result: any = await query(args);
                     const duration: number = Date.now() - startTime;
                     const requestCount: number = args.length || 1;
-                    const resultCount: number = result.length || 1;
+                    const resultCount: number = !result ? 0 : result.length || 1;
                     PrismaService.logger.log(`${model.toUpperCase()} ${operation.toLowerCase()} ${duration}ms ${requestCount} ${resultCount}`);
                     return result;
                 },

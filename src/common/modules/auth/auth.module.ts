@@ -4,10 +4,11 @@ import {AuthService} from "./auth.service";
 import {Module} from "@nestjs/common";
 import {JwtStrategy} from "./strategies/jwt.strategy";
 import {JwtModule} from "@nestjs/jwt";
+import {MagicLinkStrategy} from "./strategies/magic-link.strategy";
 
 @Module({
     controllers: [AuthController],
-    providers: [AuthService, LocalStrategy, JwtStrategy],
+    providers: [AuthService, LocalStrategy, JwtStrategy, MagicLinkStrategy],
     imports: [
         JwtModule.register({
             secret: process.env.APP_KEY,

@@ -1,19 +1,19 @@
 import {CipherService} from "./cipher.service";
 import {PrismaService} from "./prisma.service";
 import {Global, Module} from "@nestjs/common";
-import {JwtService} from "./jwt.service";
+import {TotpService} from "./totp.service";
 
 @Global()
 @Module({
     providers: [
         CipherService,
-        JwtService,
         PrismaService,
+        TotpService,
     ],
     exports: [
         CipherService,
-        JwtService,
         PrismaService,
+        TotpService,
     ],
 })
 export class HelperModule{}

@@ -1,27 +1,35 @@
-import {LocalStrategy} from "./strategies/local.strategy";
-import {AuthController} from "./auth.controller";
-import {AuthService} from "./auth.service";
-import {Module} from "@nestjs/common";
+import {RegisterController} from "./register.controller";
 import {JwtStrategy} from "./strategies/jwt.strategy";
+import {LoginController} from "./login.controller";
+import {AuthController} from "./auth.controller";
+import {Module} from "@nestjs/common";
 import {JwtModule} from "@nestjs/jwt";
-import {MagicLinkStrategy} from "./strategies/magic-link.strategy";
+import {LoginService} from "./login.service";
+import {RegisterService} from "./register.service";
+import {UsersModule} from "../../../modules/users/users.module";
+import {ConfigService} from "@nestjs/config";
+import {AuthJwtStrategy} from "./strategies/auth-jwt.strategy";
 
 @Module({
-    controllers: [AuthController],
-    providers: [AuthService, LocalStrategy, JwtStrategy, MagicLinkStrategy],
+    controllers: [AuthController, LoginController, RegisterController],
+    providers: [JwtStrategy, AuthJwtStrategy, LoginService, RegisterService],
     imports: [
-        JwtModule.register({
-            secret: process.env.APP_KEY,
-            signOptions: {
-                expiresIn: "7d",
-                algorithm: "HS512",
-                issuer: process.env.APP_NAME,
-            },
-            verifyOptions: {
-                algorithms: ["HS512"],
-                issuer: process.env.APP_NAME,
-            },
+        JwtModule.registerAsync({
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                secret: configService.get<string>("APP_KEY"),
+                signOptions: {
+                    expiresIn: "7d",
+                    algorithm: "HS512",
+                    issuer: configService.get<string>("APP_NAME"),
+                },
+                verifyOptions: {
+                    algorithms: ["HS512"],
+                    issuer: configService.get<string>("APP_NAME"),
+                },
+            }),
         }),
+        UsersModule,
     ],
 })
 export class AuthModule{}

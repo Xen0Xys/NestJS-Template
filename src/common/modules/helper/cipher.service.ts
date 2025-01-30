@@ -161,4 +161,13 @@ export class CipherService{
     generateRandomNumbers(numbersNumber = 6): string{
         return Array.from({length: numbersNumber}, () => Math.floor(Math.random() * 10)).join("");
     }
+
+    maskSensitiveInfo(str: string, visibleCount: number = 4, maskChar: string = "*"){
+        return str.slice(0, visibleCount) + maskChar.repeat(Math.max(0, str.length - visibleCount));
+    }
+
+    maskEmail(email: string){
+        const [username, domain] = email.split("@");
+        return `${this.maskSensitiveInfo(username)}@${domain}`;
+    }
 }

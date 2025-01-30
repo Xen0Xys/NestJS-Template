@@ -7,13 +7,62 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum AuthTypes {
+  PASSWORD
+  TWO_FACTOR
+  PASSKEY
+  MAGIC_LINK
+
+  @@map("auth_types")
+}
+
 model Users {
-  id         String   @id
-  email      String   @unique
-  username   String
-  password   String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id                  String              @id @db.VarChar(36)
+  email               String              @unique @db.VarChar(320)
+  username            String              @db.VarChar(30)
+  password            String
+  token_id            String              @db.VarChar(64) // Authenticate JWT for security
+  created_at          DateTime            @default(now())
+  updated_at          DateTime            @updatedAt
+  passkeys            Passkeys[]
+  two_factor_auth     TwoFactorAuth?
+  email_verifications EmailVerifications?
 
   @@map("users")
+}
+
+model EmailVerifications {
+  id         String   @id @db.VarChar(36)
+  user_id    String   @unique
+  user       Users    @relation(fields: [user_id], references: [id])
+  created_at DateTime @default(now())
+
+  @@map("email_verifications")
+}
+
+model Passkeys {
+  id               String    @id
+  public_key       Bytes
+  user_id          String
+  user             Users     @relation(fields: [user_id], references: [id])
+  webauthn_user_id String
+  counter          BigInt
+  device_type      String    @db.VarChar(12)
+  backed_up        Boolean
+  transports       String[]
+  created_at       DateTime  @default(now())
+  last_used_at     DateTime?
+
+  @@unique([user_id, webauthn_user_id])
+  @@map("passkeys")
+}
+
+model TwoFactorAuth {
+  user_id    String   @id
+  user       Users    @relation(fields: [user_id], references: [id])
+  secret     String   @db.VarChar(64)
+  enabled    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@map("two_factor_auth")
 }

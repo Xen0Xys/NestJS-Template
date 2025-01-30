@@ -1,0 +1,123 @@
+import {ConflictException, Injectable} from "@nestjs/common";
+import {PrismaService} from "../helper/prisma.service";
+import {CipherService} from "../helper/cipher.service";
+import {EmailVerifications, TwoFactorAuth, Users} from "@prisma/client";
+import {EmailsService} from "../emails/emails.service";
+import {TotpService} from "../helper/totp.service";
+import {UserEntity} from "./models/entities/user.entity";
+import {TotpRegisterPayload} from "./models/payloads/totp-register.payload";
+
+@Injectable()
+export class RegisterService{
+    constructor(
+        private readonly prismaService: PrismaService,
+        private readonly cipherService: CipherService,
+        private readonly emailsService: EmailsService,
+        private readonly totpService: TotpService,
+    ){}
+
+    async register(email: string, username: string, password: string): Promise<void>{
+        const emailExists: Users = await this.prismaService.users.findFirst({
+            where: {
+                email,
+            },
+        });
+        if(emailExists)
+            throw new ConflictException("Email already registered");
+        const hashedPassword: string = this.cipherService.hashPassword(password);
+        const user: Users = await this.prismaService.users.create({
+            data: {
+                id: Bun.randomUUIDv7(),
+                email,
+                username,
+                password: hashedPassword,
+                token_id: this.cipherService.generateRandomBytes(),
+            },
+        });
+        const emailVerification: EmailVerifications = await this.prismaService.emailVerifications.create({
+            data: {
+                id: Bun.randomUUIDv7(),
+                user_id: user.id,
+            },
+        });
+        await this.emailsService.sendEmailVerification(email, emailVerification.id);
+    }
+
+    async verifyEmail(token: string): Promise<void>{
+        const emailVerification = await this.prismaService.emailVerifications.findUnique({
+            where: {
+                id: token,
+            },
+            include: {
+                user: true,
+            },
+        });
+        if(!emailVerification)
+            throw new ConflictException("Invalid token");
+        await this.prismaService.emailVerifications.delete({
+            where: {
+                id: token,
+            },
+        });
+        // Check if token expired (24 hours)
+        if(emailVerification.created_at.getTime() + 1000 * 60 * 60 * 24 < Date.now()){
+            const newEmailVerification: EmailVerifications = await this.prismaService.emailVerifications.create({
+                data: {
+                    id: Bun.randomUUIDv7(),
+                    user_id: emailVerification.user_id,
+                },
+            });
+            await this.emailsService.sendEmailVerification(emailVerification.user.email, newEmailVerification.id);
+            throw new ConflictException("Token expired, new token sent");
+        }
+    }
+
+    async generate2FaSecret(user: UserEntity): Promise<TotpRegisterPayload>{
+        let totp: TwoFactorAuth = await this.prismaService.twoFactorAuth.findUnique({
+            where: {
+                user_id: user.id,
+            },
+        });
+        if(totp && totp.enabled)
+            throw new ConflictException("2FA already enabled");
+        if(totp)
+            // Delete existing 2FA
+            await this.prismaService.twoFactorAuth.delete({
+                where: {
+                    user_id: user.id,
+                },
+            });
+        // Recreate 2FA
+        totp = await this.prismaService.twoFactorAuth.create({
+            data: {
+                user_id: user.id,
+                secret: this.totpService.generateSecret(),
+                enabled: false,
+            },
+        });
+        return {
+            secret: totp.secret,
+            qr: await this.totpService.generateTotpQrCode(user.id, totp.secret),
+        } as TotpRegisterPayload;
+    }
+
+    async validate2Fa(user: UserEntity, code: string): Promise<void>{
+        const totp: TwoFactorAuth = await this.prismaService.twoFactorAuth.findFirst({
+            where: {
+                user_id: user.id,
+            },
+        });
+        if(!totp)
+            throw new ConflictException("2FA not enabled");
+        if(!this.totpService.verifyTotp(code, totp.secret))
+            throw new ConflictException("Invalid token");
+        await this.prismaService.twoFactorAuth.update({
+            data: {
+                enabled: true,
+            },
+            where: {
+                user_id: user.id,
+            },
+        });
+    }
+}

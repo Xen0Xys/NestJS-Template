@@ -2,13 +2,11 @@ FROM oven/bun:alpine
 
 WORKDIR /app
 
-# RUN apk add --no-cache openssl ffmpeg
-
 COPY bun.lock ./
 COPY package.json ./
 COPY tsconfig.json ./
 
-RUN bun install
+RUN bun install --production --frozen-lockfile
 
 COPY prisma ./prisma/
 RUN bunx prisma generate

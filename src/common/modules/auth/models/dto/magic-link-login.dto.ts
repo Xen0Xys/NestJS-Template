@@ -1,3 +1,3 @@
 export class MagicLinkLoginDto{
-    destination: string;
+    email: string;
 }

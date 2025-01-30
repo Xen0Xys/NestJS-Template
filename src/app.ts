@@ -15,7 +15,7 @@ import {join} from "node:path";
 
 const logger: Logger = new Logger("App");
 
-const appName: string = process.env.npm_package_name.split("-").map((word: string): string => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+process.env.APP_NAME = process.env.npm_package_name.split("-").map((word: string): string => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
 const port: number = parseInt(process.env.PORT) || 4000;
 
 async function bootstrap(){
@@ -56,8 +56,8 @@ async function loadServer(server: NestFastifyApplication){
 
     // Swagger
     const config = new DocumentBuilder()
-        .setTitle(appName)
-        .setDescription(`Documentation for ${appName}`)
+        .setTitle(process.env.APP_NAME)
+        .setDescription(`Documentation for ${process.env.APP_NAME}`)
         .setVersion(process.env.npm_package_version)
         .addBearerAuth()
         .build();

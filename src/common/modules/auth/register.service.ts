@@ -144,24 +144,20 @@ export class RegisterService{
         });
         if(passkeys.length >= 5)
             throw new ConflictException("Max passkeys reached");
-        try{
-            const result: PasskeyRegistrationPayload = await this.passkeyService.verifyRegistrationChallenge(user, response);
-            if(!result.verification.verified)
-                throw new UnauthorizedException("Invalid passkey");
-            await this.prismaService.passkeys.create({
-                data: {
-                    id: result.verification.registrationInfo.credential.id,
-                    user_id: user.id,
-                    counter: result.verification.registrationInfo.credential.counter,
-                    backed_up: result.verification.registrationInfo.credentialBackedUp,
-                    device_type: result.verification.registrationInfo.credentialDeviceType,
-                    public_key: result.verification.registrationInfo.credential.publicKey,
-                    transports: result.verification.registrationInfo.credential.transports,
-                    webauthn_user_id: result.options.user.id,
-                },
-            });
-        }catch(_: any){
+        const result: PasskeyRegistrationPayload = await this.passkeyService.verifyRegistrationChallenge(user, response);
+        if(!result.verification.verified)
             throw new UnauthorizedException("Invalid passkey");
-        }
+        await this.prismaService.passkeys.create({
+            data: {
+                id: result.verification.registrationInfo.credential.id,
+                user_id: user.id,
+                counter: result.verification.registrationInfo.credential.counter,
+                backed_up: result.verification.registrationInfo.credentialBackedUp,
+                device_type: result.verification.registrationInfo.credentialDeviceType,
+                public_key: result.verification.registrationInfo.credential.publicKey,
+                transports: result.verification.registrationInfo.credential.transports,
+                webauthn_user_id: result.options.user.id,
+            },
+        });
     }
 }

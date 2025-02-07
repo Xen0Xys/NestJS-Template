@@ -102,12 +102,7 @@ export class LoginService{
     }
 
     async validatePasskeyLogin(user: UserEntity, response: AuthenticationResponseJSON): Promise<boolean>{
-        try{
-            await this.passkeyService.verifyAuthenticationChallenge(user, response);
-        }catch(e){
-            console.log(e);
-            throw new UnauthorizedException("Invalid passkey");
-        }
+        await this.passkeyService.verifyAuthenticationChallenge(user, response);
         return true;
     }
 }

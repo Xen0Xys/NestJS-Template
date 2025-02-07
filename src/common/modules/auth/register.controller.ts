@@ -1,4 +1,4 @@
-import {Body, Controller, HttpCode, Post, Req, UseGuards} from "@nestjs/common";
+import {Body, Controller, HttpCode, Post, UseGuards} from "@nestjs/common";
 import {ApiBearerAuth, ApiTags} from "@nestjs/swagger";
 import {RegisterDto} from "./models/dto/register.dto";
 import {RegisterService} from "./register.service";
@@ -7,6 +7,8 @@ import {JwtAuthGuard} from "./guards/jwt-auth.guard";
 import {TotpRegisterPayload} from "./models/payloads/totp-register.payload";
 import {TotpDto} from "./models/dto/totp.dto";
 import {RegistrationResponseJSON} from "@simplewebauthn/server";
+import {User} from "./decorators/user.decorator";
+import {UserEntity} from "./models/entities/user.entity";
 
 @Controller("auth/register")
 @ApiTags("Auth")
@@ -44,30 +46,30 @@ export class RegisterController{
     @Post("passkey")
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    async registerPasskey(@Req() req: any): Promise<PublicKeyCredentialCreationOptionsJSON>{
-        return await this.registerService.registerPasskey(req.user);
+    async registerPasskey(@User() user: UserEntity): Promise<PublicKeyCredentialCreationOptionsJSON>{
+        return await this.registerService.registerPasskey(user);
     }
 
     @Post("passkey/validate")
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @HttpCode(204)
-    async validatePasskey(@Req() req: any, @Body() body: RegistrationResponseJSON): Promise<void>{
-        await this.registerService.validatePasskey(req.user, body);
+    async validatePasskey(@User() user: UserEntity, @Body() body: RegistrationResponseJSON): Promise<void>{
+        await this.registerService.validatePasskey(user, body);
     }
 
     @Post("2fa")
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
-    async register2fa(@Req() req: any): Promise<TotpRegisterPayload>{
-        return await this.registerService.generate2FaSecret(req.user);
+    async register2fa(@User() user: UserEntity): Promise<TotpRegisterPayload>{
+        return await this.registerService.generate2FaSecret(user);
     }
 
     @Post("2fa/validate")
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     @HttpCode(204)
-    async validate2fa(@Req() req: any, @Body() body: TotpDto): Promise<void>{
-        await this.registerService.validate2Fa(req.user, body.code);
+    async validate2fa(@User() user: UserEntity, @Body() body: TotpDto): Promise<void>{
+        await this.registerService.validate2Fa(user, body.code);
     }
 }

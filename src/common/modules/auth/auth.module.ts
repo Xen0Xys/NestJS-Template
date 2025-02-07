@@ -1,18 +1,19 @@
+import {UsersModule} from "../../../modules/users/users.module";
+import {AuthJwtStrategy} from "./strategies/auth-jwt.strategy";
 import {RegisterController} from "./register.controller";
 import {JwtStrategy} from "./strategies/jwt.strategy";
 import {LoginController} from "./login.controller";
-import {AuthController} from "./auth.controller";
-import {Module} from "@nestjs/common";
-import {JwtModule} from "@nestjs/jwt";
-import {LoginService} from "./login.service";
 import {RegisterService} from "./register.service";
-import {UsersModule} from "../../../modules/users/users.module";
+import {AuthController} from "./auth.controller";
 import {ConfigService} from "@nestjs/config";
-import {AuthJwtStrategy} from "./strategies/auth-jwt.strategy";
+import {LoginService} from "./login.service";
+import {AuthService} from "./auth.service";
+import {JwtModule} from "@nestjs/jwt";
+import {Module} from "@nestjs/common";
 
 @Module({
-    controllers: [AuthController, LoginController, RegisterController],
-    providers: [JwtStrategy, AuthJwtStrategy, LoginService, RegisterService],
+    controllers: [LoginController, RegisterController, AuthController],
+    providers: [JwtStrategy, AuthJwtStrategy, LoginService, RegisterService, AuthService],
     imports: [
         JwtModule.registerAsync({
             inject: [ConfigService],

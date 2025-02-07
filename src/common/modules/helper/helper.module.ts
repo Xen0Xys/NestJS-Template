@@ -1,8 +1,8 @@
+import {PasskeyService} from "./passkey.service";
 import {CipherService} from "./cipher.service";
 import {PrismaService} from "./prisma.service";
 import {Global, Module} from "@nestjs/common";
 import {TotpService} from "./totp.service";
-import {PasskeyService} from "./passkey.service";
 
 @Global()
 @Module({

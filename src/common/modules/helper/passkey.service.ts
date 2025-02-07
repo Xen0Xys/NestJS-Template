@@ -1,12 +1,12 @@
 import {Injectable, NotFoundException} from "@nestjs/common";
 import {UserEntity} from "../auth/models/entities/user.entity";
-import {Passkeys} from "@prisma/client";
+import type {Passkeys} from "@prisma/client";
 import {
-    AuthenticationResponseJSON,
+    type AuthenticationResponseJSON,
     generateAuthenticationOptions,
     generateRegistrationOptions,
-    RegistrationResponseJSON,
-    VerifiedRegistrationResponse,
+    type RegistrationResponseJSON,
+    type VerifiedRegistrationResponse,
     verifyAuthenticationResponse,
     verifyRegistrationResponse,
 } from "@simplewebauthn/server";
@@ -72,18 +72,10 @@ export class PasskeyService{
         return options;
     }
 
-    async verifyAuthenticationChallenge(user: UserEntity, response: AuthenticationResponseJSON): Promise<void>{
+    async verifyAuthenticationChallenge(user: UserEntity, passkey: Passkeys, response: AuthenticationResponseJSON): Promise<void>{
         const options: PublicKeyCredentialRequestOptionsJSON = this.authenticationChallenges.get(user.id);
         if(!options)
             throw new NotFoundException("No challenge found for user");
-        const passkey: Passkeys = await this.prismaService.passkeys.findFirst({
-            where: {
-                user_id: user.id,
-                webauthn_user_id: response.response.userHandle,
-            },
-        });
-        if(!passkey)
-            throw new NotFoundException("Passkey not found");
         await verifyAuthenticationResponse({
             response,
             expectedChallenge: options.challenge,

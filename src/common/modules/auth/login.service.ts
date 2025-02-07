@@ -9,7 +9,7 @@ import {UsersService} from "../../../modules/users/users.service";
 import {EmailsService} from "../emails/emails.service";
 import {TotpService} from "../helper/totp.service";
 import {PasskeyService} from "../helper/passkey.service";
-import {AuthenticationResponseJSON} from "@simplewebauthn/server";
+import type {AuthenticationResponseJSON} from "@simplewebauthn/server";
 
 @Injectable()
 export class LoginService{
@@ -102,7 +102,23 @@ export class LoginService{
     }
 
     async validatePasskeyLogin(user: UserEntity, response: AuthenticationResponseJSON): Promise<boolean>{
-        await this.passkeyService.verifyAuthenticationChallenge(user, response);
+        const passkey: Passkeys = await this.prismaService.passkeys.findFirst({
+            where: {
+                user_id: user.id,
+                webauthn_user_id: response.response.userHandle,
+            },
+        });
+        if(!passkey)
+            throw new NotFoundException("Passkey not found");
+        await this.passkeyService.verifyAuthenticationChallenge(user, passkey, response);
+        await this.prismaService.passkeys.update({
+            where: {
+                id: passkey.id,
+            },
+            data: {
+                last_used_at: new Date(),
+            },
+        });
         return true;
     }
 }

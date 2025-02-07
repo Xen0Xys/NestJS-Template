@@ -1,12 +1,12 @@
 import {ConflictException, Injectable, UnauthorizedException} from "@nestjs/common";
 import {PrismaService} from "../helper/prisma.service";
 import {CipherService} from "../helper/cipher.service";
-import {EmailVerifications, Passkeys, TwoFactorAuth, Users} from "@prisma/client";
+import type {EmailVerifications, Passkeys, TwoFactorAuth, Users} from "@prisma/client";
 import {EmailsService} from "../emails/emails.service";
 import {TotpService} from "../helper/totp.service";
 import {UserEntity} from "./models/entities/user.entity";
 import {TotpRegisterPayload} from "./models/payloads/totp-register.payload";
-import {RegistrationResponseJSON} from "@simplewebauthn/server";
+import type {RegistrationResponseJSON} from "@simplewebauthn/server";
 import {PasskeyService} from "../helper/passkey.service";
 import {PasskeyRegistrationPayload} from "../helper/models/payloads/passkey-registration.payload";
 

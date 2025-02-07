@@ -6,7 +6,7 @@ import {ConfirmEmailDto} from "./models/dto/confirm-email.dto";
 import {JwtAuthGuard} from "./guards/jwt-auth.guard";
 import {TotpRegisterPayload} from "./models/payloads/totp-register.payload";
 import {TotpDto} from "./models/dto/totp.dto";
-import {RegistrationResponseJSON} from "@simplewebauthn/server";
+import type {RegistrationResponseJSON} from "@simplewebauthn/server";
 import {User} from "./decorators/user.decorator";
 import {UserEntity} from "./models/entities/user.entity";
 

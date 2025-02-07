@@ -10,7 +10,7 @@ import {ApiBearerAuth, ApiTags} from "@nestjs/swagger";
 import {AuthGuard} from "@nestjs/passport";
 import {TotpDto} from "./models/dto/totp.dto";
 import {UsersService} from "../../../modules/users/users.service";
-import {AuthenticationResponseJSON} from "@simplewebauthn/server";
+import type {AuthenticationResponseJSON} from "@simplewebauthn/server";
 import {User} from "./decorators/user.decorator";
 
 @Controller("auth/login")

@@ -2,12 +2,14 @@ import {Injectable, NotFoundException, UnauthorizedException} from "@nestjs/comm
 import {UserEntity} from "./models/entities/user.entity";
 import {CipherService} from "../helper/cipher.service";
 import {PrismaService} from "../helper/prisma.service";
-import {AuthTypes, TwoFactorAuth} from "@prisma/client";
+import {AuthTypes, Passkeys, TwoFactorAuth} from "@prisma/client";
 import {JwtScope} from "./models/enums/jwt-scope";
 import {JwtService} from "@nestjs/jwt";
 import {UsersService} from "../../../modules/users/users.service";
 import {EmailsService} from "../emails/emails.service";
 import {TotpService} from "../helper/totp.service";
+import {PasskeyService} from "../helper/passkey.service";
+import {AuthenticationResponseJSON} from "@simplewebauthn/server";
 
 @Injectable()
 export class LoginService{
@@ -18,6 +20,7 @@ export class LoginService{
         private readonly usersService: UsersService,
         private readonly emailsService: EmailsService,
         private readonly totpService: TotpService,
+        private readonly passkeyService: PasskeyService,
     ){}
 
     async validateUser(email: string, password: string): Promise<UserEntity>{
@@ -86,6 +89,25 @@ export class LoginService{
             throw new NotFoundException("2FA not enabled for user");
         if(!this.totpService.verifyTotp(code, totp.secret))
             throw new UnauthorizedException("Invalid 2FA code");
+        return true;
+    }
+
+    async requestPasskeyLogin(user: UserEntity): Promise<PublicKeyCredentialRequestOptionsJSON>{
+        const passkeys: Passkeys[] = await this.prismaService.passkeys.findMany({
+            where: {
+                user_id: user.id,
+            },
+        });
+        return await this.passkeyService.generateAuthenticationChallenge(user, passkeys);
+    }
+
+    async validatePasskeyLogin(user: UserEntity, response: AuthenticationResponseJSON): Promise<boolean>{
+        try{
+            await this.passkeyService.verifyAuthenticationChallenge(user, response);
+        }catch(e){
+            console.log(e);
+            throw new UnauthorizedException("Invalid passkey");
+        }
         return true;
     }
 }

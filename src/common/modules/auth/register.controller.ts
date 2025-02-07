@@ -1,4 +1,4 @@
-import {Body, Controller, HttpCode, NotImplementedException, Post, Req, UseGuards} from "@nestjs/common";
+import {Body, Controller, HttpCode, Post, Req, UseGuards} from "@nestjs/common";
 import {ApiBearerAuth, ApiTags} from "@nestjs/swagger";
 import {RegisterDto} from "./models/dto/register.dto";
 import {RegisterService} from "./register.service";
@@ -6,6 +6,7 @@ import {ConfirmEmailDto} from "./models/dto/confirm-email.dto";
 import {JwtAuthGuard} from "./guards/jwt-auth.guard";
 import {TotpRegisterPayload} from "./models/payloads/totp-register.payload";
 import {TotpDto} from "./models/dto/totp.dto";
+import {RegistrationResponseJSON} from "@simplewebauthn/server";
 
 @Controller("auth/register")
 @ApiTags("Auth")
@@ -41,20 +42,24 @@ export class RegisterController{
     }
 
     @Post("passkey")
-    registerPasskey(){
-        throw new NotImplementedException();
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    async registerPasskey(@Req() req: any): Promise<PublicKeyCredentialCreationOptionsJSON>{
+        return await this.registerService.registerPasskey(req.user);
     }
 
     @Post("passkey/validate")
-    validatePasskey(){
-        throw new NotImplementedException();
+    @UseGuards(JwtAuthGuard)
+    @ApiBearerAuth()
+    @HttpCode(204)
+    async validatePasskey(@Req() req: any, @Body() body: RegistrationResponseJSON): Promise<void>{
+        await this.registerService.validatePasskey(req.user, body);
     }
 
     @Post("2fa")
     @UseGuards(JwtAuthGuard)
     @ApiBearerAuth()
     async register2fa(@Req() req: any): Promise<TotpRegisterPayload>{
-        // TODO: Fix QR code generation
         return await this.registerService.generate2FaSecret(req.user);
     }
 

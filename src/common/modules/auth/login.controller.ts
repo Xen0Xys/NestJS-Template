@@ -1,14 +1,5 @@
 import {MagicLinkLoginDto} from "./models/dto/magic-link-login.dto";
-import {
-    Body,
-    Controller,
-    HttpCode,
-    NotImplementedException,
-    Post,
-    Req,
-    UnauthorizedException,
-    UseGuards,
-} from "@nestjs/common";
+import {Body, Controller, HttpCode, Post, Req, UnauthorizedException, UseGuards} from "@nestjs/common";
 import {LoginPayload} from "./models/payloads/login.payload";
 import {LocalLoginDto} from "./models/dto/local-login.dto";
 import {UserEntity} from "./models/entities/user.entity";
@@ -19,6 +10,7 @@ import {ApiBearerAuth, ApiTags} from "@nestjs/swagger";
 import {AuthGuard} from "@nestjs/passport";
 import {TotpDto} from "./models/dto/totp.dto";
 import {UsersService} from "../../../modules/users/users.service";
+import {AuthenticationResponseJSON} from "@simplewebauthn/server";
 
 @Controller("auth/login")
 @ApiTags("Auth")
@@ -107,10 +99,30 @@ export class LoginController{
         });
     }
 
-    @Post("passkey")
-    loginPasskey(){
-        // Generate JWT token
-        throw new NotImplementedException();
+    @Post("passkey/request")
+    @UseGuards(AuthGuard("auth-jwt"))
+    @ApiBearerAuth()
+    async requestPasskeyLogin(@Req() req: any): Promise<PublicKeyCredentialRequestOptionsJSON>{
+        req = req.user;
+        return await this.loginService.requestPasskeyLogin(req.user);
+    }
+
+    @Post("passkey/validate")
+    @UseGuards(AuthGuard("auth-jwt"))
+    @ApiBearerAuth()
+    async validatePasskeyLogin(@Req() req: any, @Body() body: AuthenticationResponseJSON): Promise<LoginPayload>{
+        req = req.user;
+        if(!await this.loginService.validatePasskeyLogin(req.user, body))
+            throw new UnauthorizedException("Invalid passkey");
+        const token: string = this.loginService.generateToken(
+            req.user.id,
+            req.user.tokenId,
+            JwtScope.USAGE,
+        );
+        return new LoginPayload({
+            user: req.user,
+            token,
+        });
     }
 
     @Post("2fa")

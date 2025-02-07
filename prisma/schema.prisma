@@ -46,7 +46,7 @@ model Passkeys {
   user_id          String
   user             Users     @relation(fields: [user_id], references: [id])
   webauthn_user_id String
-  counter          BigInt
+  counter          Int
   device_type      String    @db.VarChar(12)
   backed_up        Boolean
   transports       String[]

@@ -1,11 +1,14 @@
-import {ConflictException, Injectable} from "@nestjs/common";
+import {ConflictException, Injectable, UnauthorizedException} from "@nestjs/common";
 import {PrismaService} from "../helper/prisma.service";
 import {CipherService} from "../helper/cipher.service";
-import {EmailVerifications, TwoFactorAuth, Users} from "@prisma/client";
+import {EmailVerifications, Passkeys, TwoFactorAuth, Users} from "@prisma/client";
 import {EmailsService} from "../emails/emails.service";
 import {TotpService} from "../helper/totp.service";
 import {UserEntity} from "./models/entities/user.entity";
 import {TotpRegisterPayload} from "./models/payloads/totp-register.payload";
+import {RegistrationResponseJSON} from "@simplewebauthn/server";
+import {PasskeyService} from "../helper/passkey.service";
+import {PasskeyRegistrationPayload} from "../helper/models/payloads/passkey-registration.payload";
 
 @Injectable()
 export class RegisterService{
@@ -14,6 +17,7 @@ export class RegisterService{
         private readonly cipherService: CipherService,
         private readonly emailsService: EmailsService,
         private readonly totpService: TotpService,
+        private readonly passkeyService: PasskeyService,
     ){}
 
     async register(email: string, username: string, password: string): Promise<void>{
@@ -119,5 +123,45 @@ export class RegisterService{
                 user_id: user.id,
             },
         });
+    }
+
+    async registerPasskey(user: UserEntity): Promise<PublicKeyCredentialCreationOptionsJSON>{
+        const passkeys: Passkeys[] = await this.prismaService.passkeys.findMany({
+            where: {
+                user_id: user.id,
+            },
+        });
+        if(passkeys.length >= 5)
+            throw new ConflictException("Max passkeys reached");
+        return this.passkeyService.generateRegistrationChallenge(user, passkeys);
+    }
+
+    async validatePasskey(user: UserEntity, response: RegistrationResponseJSON): Promise<void>{
+        const passkeys: Passkeys[] = await this.prismaService.passkeys.findMany({
+            where: {
+                user_id: user.id,
+            },
+        });
+        if(passkeys.length >= 5)
+            throw new ConflictException("Max passkeys reached");
+        try{
+            const result: PasskeyRegistrationPayload = await this.passkeyService.verifyRegistrationChallenge(user, response);
+            if(!result.verification.verified)
+                throw new UnauthorizedException("Invalid passkey");
+            await this.prismaService.passkeys.create({
+                data: {
+                    id: result.verification.registrationInfo.credential.id,
+                    user_id: user.id,
+                    counter: result.verification.registrationInfo.credential.counter,
+                    backed_up: result.verification.registrationInfo.credentialBackedUp,
+                    device_type: result.verification.registrationInfo.credentialDeviceType,
+                    public_key: result.verification.registrationInfo.credential.publicKey,
+                    transports: result.verification.registrationInfo.credential.transports,
+                    webauthn_user_id: result.options.user.id,
+                },
+            });
+        }catch(_: any){
+            throw new UnauthorizedException("Invalid passkey");
+        }
     }
 }

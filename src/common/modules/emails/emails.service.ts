@@ -13,7 +13,8 @@ export class EmailsService{
         @Inject(EMAILS_OPTIONS) private readonly optionsService: EmailsModuleOptions,
         private readonly cipherService: CipherService,
     ){
-        this.transporter = nodemailer.createTransport(this.optionsService.url);
+        if(this.optionsService.url)
+            this.transporter = nodemailer.createTransport(this.optionsService.url);
     }
 
     async sendMail(to: string, subject: string, text: string, html?: string): Promise<void>{

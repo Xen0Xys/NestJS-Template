@@ -20,7 +20,7 @@ export class RegisterService{
         private readonly passkeyService: PasskeyService,
     ){}
 
-    async register(email: string, username: string, password: string): Promise<void>{
+    async register(email: string, username: string, password?: string): Promise<void>{
         const emailExists: Users = await this.prismaService.users.findFirst({
             where: {
                 email,
@@ -28,7 +28,7 @@ export class RegisterService{
         });
         if(emailExists)
             throw new ConflictException("Email already registered");
-        const hashedPassword: string = this.cipherService.hashPassword(password);
+        const hashedPassword: string = password ? this.cipherService.hashPassword(password) : undefined;
         const user: Users = await this.prismaService.users.create({
             data: {
                 id: Bun.randomUUIDv7(),
@@ -45,6 +45,24 @@ export class RegisterService{
             },
         });
         await this.emailsService.sendEmailVerification(email, emailVerification.id);
+    }
+
+    async registerWithProvider(email: string, username: string){
+        const emailExists: Users = await this.prismaService.users.findFirst({
+            where: {
+                email,
+            },
+        });
+        if(emailExists)
+            throw new ConflictException("This email is already used by a user, please use another provider account, or link this provider account to your local account");
+        await this.prismaService.users.create({
+            data: {
+                id: Bun.randomUUIDv7(),
+                email,
+                username,
+                token_id: this.cipherService.generateRandomBytes(),
+            },
+        });
     }
 
     async verifyEmail(token: string): Promise<void>{

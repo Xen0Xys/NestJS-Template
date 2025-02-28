@@ -1,6 +1,8 @@
 import {Controller, Get, UseGuards} from "@nestjs/common";
 import {ApiTags} from "@nestjs/swagger";
 import {AuthGuard} from "@nestjs/passport";
+import {User} from "./decorators/user.decorator";
+import {UserEntity} from "./models/entities/user.entity";
 
 @Controller("auth/oidc")
 @ApiTags("Auth")
@@ -10,15 +12,16 @@ export class OidcController{
     ){}
 
     @Get("providers")
-    getProviders(){
+    getProviders(): string[]{
         return [
-            "https://discord.com/oauth2/authorize?client_id=1339952373480558763&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A4000%2Fauth%2Fcallback%2Fdiscord&scope=email+identify",
+            process.env.DISCORD_CLIENT_URL,
         ];
     }
 
     @Get("callback/discord")
     @UseGuards(AuthGuard("discord"))
-    discordCallback(){
-        return "Discord callback";
+    discordCallback(@User() user: UserEntity){
+        // TODO: Generate usage token and redirect to frontend
+        return user;
     }
 }

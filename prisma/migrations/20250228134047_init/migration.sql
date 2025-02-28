@@ -1,17 +1,29 @@
 -- CreateEnum
 CREATE TYPE "auth_types" AS ENUM ('PASSWORD', 'TWO_FACTOR', 'PASSKEY', 'MAGIC_LINK');
 
+-- CreateEnum
+CREATE TYPE "providers" AS ENUM ('DISCORD');
+
 -- CreateTable
 CREATE TABLE "users" (
     "id" VARCHAR(36) NOT NULL,
     "email" VARCHAR(320) NOT NULL,
     "username" VARCHAR(30) NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "token_id" VARCHAR(64) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "registered_providers" (
+    "user_id" VARCHAR(36) NOT NULL,
+    "email" TEXT NOT NULL,
+    "provider" "providers" NOT NULL,
+
+    CONSTRAINT "registered_providers_pkey" PRIMARY KEY ("user_id","provider")
 );
 
 -- CreateTable
@@ -59,10 +71,13 @@ CREATE UNIQUE INDEX "email_verifications_user_id_key" ON "email_verifications"("
 CREATE UNIQUE INDEX "passkeys_user_id_webauthn_user_id_key" ON "passkeys"("user_id", "webauthn_user_id");
 
 -- AddForeignKey
-ALTER TABLE "email_verifications" ADD CONSTRAINT "email_verifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "registered_providers" ADD CONSTRAINT "registered_providers_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "email_verifications" ADD CONSTRAINT "email_verifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "two_factor_auth" ADD CONSTRAINT "two_factor_auth_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "passkeys" ADD CONSTRAINT "passkeys_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "two_factor_auth" ADD CONSTRAINT "two_factor_auth_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

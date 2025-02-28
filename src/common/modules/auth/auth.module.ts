@@ -11,10 +11,20 @@ import {AuthService} from "./auth.service";
 import {JwtModule} from "@nestjs/jwt";
 import {Module} from "@nestjs/common";
 import {OidcController} from "./oidc.controller";
+import {DiscordStrategy} from "./strategies/oidc/discord.strategy";
+import {OidcService} from "./oidc.service";
 
 @Module({
     controllers: [LoginController, RegisterController, AuthController, OidcController],
-    providers: [JwtStrategy, AuthJwtStrategy, LoginService, RegisterService, AuthService],
+    providers: [
+        RegisterService,
+        LoginService,
+        AuthService,
+        OidcService,
+        JwtStrategy,
+        AuthJwtStrategy,
+        DiscordStrategy,
+    ],
     imports: [
         JwtModule.registerAsync({
             inject: [ConfigService],

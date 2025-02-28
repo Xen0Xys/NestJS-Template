@@ -1,17 +1,17 @@
-import {MagicLinkLoginDto} from "./models/dto/magic-link-login.dto";
 import {Body, Controller, HttpCode, Post, Req, UnauthorizedException, UseGuards} from "@nestjs/common";
+import type {AuthenticationResponseJSON} from "@simplewebauthn/server";
+import {MagicLinkLoginDto} from "./models/dto/magic-link-login.dto";
+import {UsersService} from "../../../modules/users/users.service";
 import {LoginPayload} from "./models/payloads/login.payload";
 import {LocalLoginDto} from "./models/dto/local-login.dto";
 import {UserEntity} from "./models/entities/user.entity";
-import {JwtScope} from "./models/enums/jwt-scope";
-import {LoginService} from "./login.service";
-import {AuthTypes} from "@prisma/client";
 import {ApiBearerAuth, ApiTags} from "@nestjs/swagger";
-import {AuthGuard} from "@nestjs/passport";
-import {TotpDto} from "./models/dto/totp.dto";
-import {UsersService} from "../../../modules/users/users.service";
-import type {AuthenticationResponseJSON} from "@simplewebauthn/server";
+import {JwtScope} from "./models/enums/jwt-scope";
 import {User} from "./decorators/user.decorator";
+import {TotpDto} from "./models/dto/totp.dto";
+import {LoginService} from "./login.service";
+import {AuthGuard} from "@nestjs/passport";
+import {AuthTypes} from "@prisma/client";
 
 @Controller("auth/login")
 @ApiTags("Auth")
@@ -73,8 +73,8 @@ export class LoginController{
     @UseGuards(AuthGuard("auth-jwt"))
     @ApiBearerAuth()
     async loginCallback(@User() user: UserEntity, @Req() req: any): Promise<LoginPayload>{
+        // If the user is logging in with a magic link, check for 2FA or Passkey
         if(req.user.scope === JwtScope.MAGIC){
-            // Check for 2FA/Passkey
             const authType: AuthTypes = await this.loginService.getUserAuthType(user.id);
             const token: string = this.loginService.generateToken(
                 user.id,
@@ -87,6 +87,7 @@ export class LoginController{
                 token,
             });
         }
+        // Else, the user is logging in with 2FA or Passkey
         const authToken: string = this.loginService.generateToken(
             user.id,
             user.tokenId,

@@ -36,7 +36,7 @@ export class EmailsService{
             to,
             subject: "Email Verification",
             text: "Click here to verify your email",
-            html: `<a href="${process.env.REDIRECT_URL}/auth/email-verification?code=${code}">Click here to verify your email</a>`,
+            html: `<a href="${process.env.FRONTEND_URL}/auth/email-verification?code=${code}">Click here to verify your email</a>`,
         });
     }
 
@@ -46,7 +46,7 @@ export class EmailsService{
             to: email,
             subject: "Magic Link",
             text: "Click here to login",
-            html: `<a href="${process.env.REDIRECT_URL}/auth/callback?token=${token}">Click here to login</a>`,
+            html: `<a href="${process.env.FRONTEND_URL}/auth/callback?token=${token}">Click here to login</a>`,
         });
     }
 }

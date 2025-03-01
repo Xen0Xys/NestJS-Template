@@ -14,7 +14,7 @@ export class AuthJwtStrategy extends PassportStrategy(Strategy, "auth-jwt"){
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
             ignoreExpiration: false,
-            secretOrKey: process.env.APP_KEY,
+            secretOrKey: process.env.APP_SECRET,
             issuer: process.env.APP_NAME,
             algorithms: ["HS512"],
         });

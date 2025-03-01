@@ -17,7 +17,7 @@ import {PrismaService} from "./prisma.service";
 export class PasskeyService{
     private readonly registerChallenges: Map<string, PublicKeyCredentialCreationOptionsJSON> = new Map();
     private readonly authenticationChallenges: Map<string, PublicKeyCredentialRequestOptionsJSON> = new Map();
-    private readonly RP_ID: string = process.env.REDIRECT_URL.replace("http://", "").replace("https://", "").split(":")[0];
+    private readonly RP_ID: string = process.env.FRONTEND_URL.replace("http://", "").replace("https://", "").split(":")[0];
 
     constructor(
         private readonly prismaService: PrismaService,
@@ -50,7 +50,7 @@ export class PasskeyService{
         const verification: VerifiedRegistrationResponse = await verifyRegistrationResponse({
             response,
             expectedChallenge: options.challenge,
-            expectedOrigin: process.env.REDIRECT_URL,
+            expectedOrigin: process.env.FRONTEND_URL,
             expectedRPID: this.RP_ID,
         });
         this.registerChallenges.delete(user.id);
@@ -79,7 +79,7 @@ export class PasskeyService{
         await verifyAuthenticationResponse({
             response,
             expectedChallenge: options.challenge,
-            expectedOrigin: process.env.REDIRECT_URL,
+            expectedOrigin: process.env.FRONTEND_URL,
             expectedRPID: this.RP_ID,
             credential: {
                 id: passkey.id,

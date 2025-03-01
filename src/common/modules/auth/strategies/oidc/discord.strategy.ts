@@ -1,9 +1,9 @@
+import {UserEntity} from "../../models/entities/user.entity";
 import {PassportStrategy} from "@nestjs/passport";
+import {OidcService} from "../../oidc.service";
 import {Injectable} from "@nestjs/common";
 import {Strategy} from "passport-discord";
-import {OidcService} from "../../oidc.service";
 import {Providers} from "@prisma/client";
-import {UserEntity} from "../../models/entities/user.entity";
 
 @Injectable()
 export class DiscordStrategy extends PassportStrategy(Strategy, "discord"){
@@ -13,7 +13,7 @@ export class DiscordStrategy extends PassportStrategy(Strategy, "discord"){
         super({
             clientID: process.env.DISCORD_CLIENT_ID,
             clientSecret: process.env.DISCORD_CLIENT_SECRET,
-            callbackURL: "http://localhost:4000/auth/oidc/callback/discord",
+            callbackURL: `${process.env.BACKEND_URL}/auth/oidc/callback/discord`,
             scope: ["identify", "email"],
         });
     }

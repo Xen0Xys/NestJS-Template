@@ -20,10 +20,10 @@ CREATE TABLE "users" (
 -- CreateTable
 CREATE TABLE "registered_providers" (
     "user_id" VARCHAR(36) NOT NULL,
-    "email" TEXT NOT NULL,
+    "email" TEXT,
     "provider" "providers" NOT NULL,
 
-    CONSTRAINT "registered_providers_pkey" PRIMARY KEY ("user_id","provider")
+    CONSTRAINT "registered_providers_pkey" PRIMARY KEY ("user_id")
 );
 
 -- CreateTable
@@ -63,6 +63,9 @@ CREATE TABLE "two_factor_auth" (
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "registered_providers_email_provider_key" ON "registered_providers"("email", "provider");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "email_verifications_user_id_key" ON "email_verifications"("user_id");

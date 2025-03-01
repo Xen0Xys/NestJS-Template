@@ -39,12 +39,12 @@ model Users {
 }
 
 model RegisteredProviders {
-  user_id  String    @db.VarChar(36)
+  user_id  String    @id @db.VarChar(36)
   user     Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  email    String
+  email    String?
   provider Providers
 
-  @@id([email, provider])
+  @@unique([email, provider])
   @@map("registered_providers")
 }
 

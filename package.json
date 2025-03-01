@@ -1,6 +1,6 @@
 {
     "name": "nestjs-template",
-    "version": "0.0.1",
+    "version": "1.0.0-beta",
     "description": "",
     "author": "",
     "private": true,
@@ -56,7 +56,7 @@
         "@types/qrcode": "^1.5.5",
         "@typescript-eslint/parser": "^8.25.0",
         "eslint": "^9.21.0",
-        "typescript": "^5.7.3"
+        "typescript": "^5.8.2"
     },
     "prisma": {
         "seed": "bun prisma/seed.ts"

@@ -1,4 +1,5 @@
 import {Exclude} from "class-transformer";
+import {Providers} from "@prisma/client";
 
 export class UserEntity{
     id: string;
@@ -7,6 +8,9 @@ export class UserEntity{
     createdAt: Date;
     updatedAt: Date;
     verified: boolean;
+
+    @Exclude()
+    provider: Providers;
 
     @Exclude()
     password: string;

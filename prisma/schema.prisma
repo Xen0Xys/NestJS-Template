@@ -23,29 +23,19 @@ enum Providers {
 }
 
 model Users {
-  id                   String                @id @db.VarChar(36)
-  email                String                @unique @db.VarChar(320)
-  username             String                @db.VarChar(30)
-  password             String?
-  token_id             String                @db.VarChar(64) // Authenticate JWT for security
-  created_at           DateTime              @default(now())
-  updated_at           DateTime              @updatedAt
-  passkeys             Passkeys[]
-  two_factor_auth      TwoFactorAuth?
-  email_verifications  EmailVerifications?
-  registered_providers RegisteredProviders[]
+  id                  String              @id @db.VarChar(36)
+  email               String              @unique @db.VarChar(320)
+  username            String              @db.VarChar(30)
+  password            String?
+  provider            Providers?
+  token_id            String              @db.VarChar(64) // Authenticate JWT for security
+  created_at          DateTime            @default(now())
+  updated_at          DateTime            @updatedAt
+  passkeys            Passkeys[]
+  two_factor_auth     TwoFactorAuth?
+  email_verifications EmailVerifications?
 
   @@map("users")
-}
-
-model RegisteredProviders {
-  user_id  String    @id @db.VarChar(36)
-  user     Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  email    String?
-  provider Providers
-
-  @@unique([email, provider])
-  @@map("registered_providers")
 }
 
 model EmailVerifications {

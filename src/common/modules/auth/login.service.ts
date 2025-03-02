@@ -25,6 +25,8 @@ export class LoginService{
 
     async validateUser(email: string, password: string): Promise<UserEntity>{
         const user: UserEntity = await this.usersService.getUserByEmail(email);
+        if(!user.password)
+            throw new UnauthorizedException(`Please use provider ${user.provider} to login`);
         if(!this.cipherService.comparePassword(password, user.password))
             throw new UnauthorizedException("Invalid password");
         return user;

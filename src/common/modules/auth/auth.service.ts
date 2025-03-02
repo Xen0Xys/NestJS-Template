@@ -3,7 +3,7 @@ import {UserEntity} from "./models/entities/user.entity";
 import {Passkeys, TwoFactorAuth} from "@prisma/client";
 import {CipherService} from "../helper/cipher.service";
 import {PrismaService} from "../helper/prisma.service";
-import {Injectable} from "@nestjs/common";
+import {Injectable, UnauthorizedException} from "@nestjs/common";
 
 @Injectable()
 export class AuthService{
@@ -11,6 +11,26 @@ export class AuthService{
         private readonly prismaService: PrismaService,
         private readonly cipherService: CipherService,
     ){}
+
+    async updatePassword(user: UserEntity, newPassword: string, currentPassword?: string): Promise<void>{
+        // Check if current password is equal to the user's password
+        if(user.password){
+            if(!currentPassword)
+                throw new UnauthorizedException("Passwords do not match");
+            const valid: boolean = this.cipherService.comparePassword(currentPassword, user.password);
+            if(!valid)
+                throw new UnauthorizedException("Invalid password");
+        }
+        // Update the user's password
+        await this.prismaService.users.update({
+            where: {
+                id: user.id,
+            },
+            data: {
+                password: this.cipherService.hashPassword(newPassword),
+            },
+        });
+    }
 
     async is2faEnabled(user: UserEntity): Promise<boolean>{
         const twoFactorAuth: TwoFactorAuth = await this.prismaService.twoFactorAuth.findUnique({

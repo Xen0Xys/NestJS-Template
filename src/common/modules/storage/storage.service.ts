@@ -1,6 +1,97 @@
-import {Injectable} from "@nestjs/common";
+import {Injectable, NotImplementedException} from "@nestjs/common";
+import {BunFile, FileSink, S3Client, S3File} from "bun";
+import {CipherService} from "../helper/cipher.service";
 
 @Injectable()
 export class StorageService{
+    private readonly s3Client?: S3Client;
 
+    constructor(
+        private readonly cipherService: CipherService,
+    ){
+        if(process.env.S3_ENDPOINT)
+            this.s3Client = new S3Client({
+                endpoint: process.env.S3_ENDPOINT,
+                bucket: process.env.S3_BUCKET,
+                region: process.env.S3_REGION,
+                accessKeyId: process.env.S3_ACCESS_KEY,
+                secretAccessKey: process.env.S3_SECRET_KEY,
+            });
+    }
+
+    private getFileName(sum: string): string{
+        return `./storage/${sum.substring(0, 2)}/${sum.substring(2, 4)}/${sum.substring(4)}`;
+    }
+
+    private getTempFileName(uuid: string): string{
+        return `./storage/.tmp/${uuid}`;
+    }
+
+    async uploadBuffer(data: Buffer): Promise<void>{
+        const fileName: string = this.getFileName(this.cipherService.getSum(data));
+        let file: BunFile | S3File;
+        if(this.s3Client)
+            file = this.s3Client.file(fileName);
+        else
+            file = Bun.file(fileName);
+        await file.write(data);
+    }
+
+    async uploadStream(data: ReadableStream): Promise<void>{
+        // Write temp file
+        const tempFileName: string = this.getTempFileName(Bun.randomUUIDv7());
+        let tempFile: BunFile | S3File;
+        if(this.s3Client && process.env.S3_TEMP_FILES === "true")
+            tempFile = this.s3Client.file(tempFileName);
+        else
+            tempFile = Bun.file(tempFileName);
+        const writer: FileSink = tempFile.writer();
+        const hasher = new Bun.CryptoHasher("sha256");
+        for await (const chunk of data){
+            writer.write(chunk);
+            hasher.update(chunk);
+        }
+        const fileName: string = this.getFileName(hasher.digest().toString("hex"));
+
+        // Write final file using temp file and computed sum
+        let file: BunFile | S3File;
+        if(this.s3Client)
+            file = this.s3Client.file(fileName);
+        else
+            file = Bun.file(fileName);
+        const fileWriter: FileSink = file.writer();
+        for await (const chunk of tempFile.stream())
+            fileWriter.write(chunk);
+
+        // Delete temp file
+        await tempFile.delete();
+    }
+
+    async downloadBuffer(sum: string): Promise<Buffer>{
+        const fileName: string = this.getFileName(sum);
+        if(this.s3Client)
+            return Buffer.from(await this.s3Client.file(fileName).arrayBuffer());
+        else
+            return Buffer.from(await Bun.file(fileName).arrayBuffer());
+    }
+
+    downloadStream(sum: string): ReadableStream{
+        const fileName: string = this.getFileName(sum);
+        if(this.s3Client)
+            return this.s3Client.file(fileName).stream();
+        else
+            return Bun.file(fileName).stream();
+    }
+
+    async deleteFile(sum: string): Promise<void>{
+        const fileName: string = this.getFileName(sum);
+        if(this.s3Client)
+            await this.s3Client.delete(fileName);
+        else
+            await Bun.file(fileName).delete();
+    }
+
+    async listFiles(_take: number, _skip: number): Promise<string[]>{
+        throw new NotImplementedException("File listing is not implemented yet");
+    }
 }

@@ -1,10 +1,11 @@
-import {Injectable, NotImplementedException} from "@nestjs/common";
+import {Injectable, Logger, NotImplementedException} from "@nestjs/common";
 import {BunFile, FileSink, S3Client, S3File} from "bun";
 import {CipherService} from "../helper/cipher.service";
 
 @Injectable()
 export class StorageService{
     private readonly s3Client?: S3Client;
+    private readonly logger: Logger = new Logger(StorageService.name);
 
     constructor(
         private readonly cipherService: CipherService,
@@ -20,15 +21,20 @@ export class StorageService{
     }
 
     private getFileName(sum: string): string{
+        if(this.s3Client)
+            return `./${sum.substring(0, 2)}/${sum.substring(2, 4)}/${sum.substring(4)}`;
         return `./storage/${sum.substring(0, 2)}/${sum.substring(2, 4)}/${sum.substring(4)}`;
     }
 
     private getTempFileName(uuid: string): string{
+        if(this.s3Client)
+            return `./.tmp/${uuid}`;
         return `./storage/.tmp/${uuid}`;
     }
 
     async uploadBuffer(data: Buffer): Promise<void>{
         const fileName: string = this.getFileName(this.cipherService.getSum(data));
+        this.logger.debug(`Uploading file ${fileName}`);
         let file: BunFile | S3File;
         if(this.s3Client)
             file = this.s3Client.file(fileName);
@@ -52,6 +58,7 @@ export class StorageService{
             hasher.update(chunk);
         }
         const fileName: string = this.getFileName(hasher.digest().toString("hex"));
+        this.logger.debug(`Uploading file ${fileName}`);
 
         // Write final file using temp file and computed sum
         let file: BunFile | S3File;
@@ -69,6 +76,7 @@ export class StorageService{
 
     async downloadBuffer(sum: string): Promise<Buffer>{
         const fileName: string = this.getFileName(sum);
+        this.logger.debug(`Downloading file ${fileName}`);
         if(this.s3Client)
             return Buffer.from(await this.s3Client.file(fileName).arrayBuffer());
         else
@@ -77,6 +85,7 @@ export class StorageService{
 
     downloadStream(sum: string): ReadableStream{
         const fileName: string = this.getFileName(sum);
+        this.logger.debug(`Downloading file ${fileName}`);
         if(this.s3Client)
             return this.s3Client.file(fileName).stream();
         else
@@ -85,6 +94,7 @@ export class StorageService{
 
     async deleteFile(sum: string): Promise<void>{
         const fileName: string = this.getFileName(sum);
+        this.logger.debug(`Deleting file ${fileName}`);
         if(this.s3Client)
             await this.s3Client.delete(fileName);
         else
@@ -92,6 +102,7 @@ export class StorageService{
     }
 
     async listFiles(_take: number, _skip: number): Promise<string[]>{
+        this.logger.debug(`Listing ${_take} files starting from ${_skip}`);
         throw new NotImplementedException("File listing is not implemented yet");
     }
 }

@@ -1,4 +1,4 @@
-import {ConflictException, Injectable, UnauthorizedException} from "@nestjs/common";
+import {ConflictException, Injectable, Logger, UnauthorizedException} from "@nestjs/common";
 import {PrismaService} from "../helper/prisma.service";
 import {CipherService} from "../helper/cipher.service";
 import type {EmailVerifications, Passkeys, Providers, TwoFactorAuth, Users} from "@prisma/client";
@@ -12,6 +12,8 @@ import {PasskeyRegistrationPayload} from "../helper/models/payloads/passkey-regi
 
 @Injectable()
 export class RegisterService{
+    private readonly logger: Logger = new Logger(RegisterService.name);
+
     constructor(
         private readonly prismaService: PrismaService,
         private readonly cipherService: CipherService,
@@ -45,6 +47,7 @@ export class RegisterService{
             },
         });
         await this.emailsService.sendEmailVerification(email, emailVerification.id);
+        this.logger.debug(`Registered user with id ${user.id}`);
     }
 
     async registerWithProvider(email: string, username: string, provider: Providers){
@@ -55,7 +58,7 @@ export class RegisterService{
         });
         if(emailExists)
             throw new ConflictException("This email is already used by a user, please use another provider account");
-        await this.prismaService.users.create({
+        const user: Users = await this.prismaService.users.create({
             data: {
                 id: Bun.randomUUIDv7(),
                 email,
@@ -64,6 +67,7 @@ export class RegisterService{
                 token_id: this.cipherService.generateRandomBytes(),
             },
         });
+        this.logger.debug(`Registered user with id ${user.id}`);
     }
 
     async verifyEmail(token: string): Promise<void>{

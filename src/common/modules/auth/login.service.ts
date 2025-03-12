@@ -1,4 +1,4 @@
-import {Injectable, NotFoundException, UnauthorizedException} from "@nestjs/common";
+import {Injectable, Logger, NotFoundException, UnauthorizedException} from "@nestjs/common";
 import {UserEntity} from "./models/entities/user.entity";
 import {CipherService} from "../helper/cipher.service";
 import {PrismaService} from "../helper/prisma.service";
@@ -13,6 +13,8 @@ import type {AuthenticationResponseJSON} from "@simplewebauthn/server";
 
 @Injectable()
 export class LoginService{
+    private readonly logger: Logger = new Logger(LoginService.name);
+
     constructor(
         private readonly prismaService: PrismaService,
         private readonly cipherService: CipherService,
@@ -25,10 +27,15 @@ export class LoginService{
 
     async validateUser(email: string, password: string): Promise<UserEntity>{
         const user: UserEntity = await this.usersService.getUserByEmail(email);
-        if(!user.password)
+        if(!user.password){
+            this.logger.debug(`Failed validation for user with id ${user.id} (Invalid provider)`);
             throw new UnauthorizedException(`Please use provider ${user.provider} to login`);
-        if(!this.cipherService.comparePassword(password, user.password))
+        }
+        if(!this.cipherService.comparePassword(password, user.password)){
+            this.logger.debug(`Failed validation for user with id ${user.id} (Invalid password)`);
             throw new UnauthorizedException("Invalid password");
+        }
+        this.logger.debug(`Validated user with id ${user.id}`);
         return user;
     }
 
@@ -61,6 +68,7 @@ export class LoginService{
     }
 
     generateToken(userId: string, userTokenId: string, scope: JwtScope): string{
+        this.logger.debug(`Issuing token for user with id ${userId} with scope ${scope}`);
         return this.jwtService.sign({
             scope,
         }, {

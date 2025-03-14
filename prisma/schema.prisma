@@ -31,6 +31,8 @@ model Users {
   token_id            String              @db.VarChar(64) // Authenticate JWT for security
   created_at          DateTime            @default(now())
   updated_at          DateTime            @updatedAt
+  avatar_id           String?
+  avatar              Files?              @relation(fields: [avatar_id], references: [id], onDelete: Restrict)
   passkeys            Passkeys[]
   two_factor_auth     TwoFactorAuth?
   email_verifications EmailVerifications?
@@ -72,4 +74,11 @@ model TwoFactorAuth {
   created_at DateTime @default(now())
 
   @@map("two_factor_auth")
+}
+
+model Files {
+  id    String  @id @db.VarChar(64)
+  users Users[]
+
+  @@map("files")
 }

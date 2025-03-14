@@ -1,6 +1,8 @@
 import {Injectable, Logger, NotImplementedException} from "@nestjs/common";
 import {BunFile, FileSink, S3Client, S3File} from "bun";
 import {CipherService} from "../helper/cipher.service";
+import {PrismaService} from "../helper/prisma.service";
+import {Files} from "@prisma/client";
 
 @Injectable()
 export class StorageService{
@@ -9,6 +11,7 @@ export class StorageService{
 
     constructor(
         private readonly cipherService: CipherService,
+        private readonly prismaService: PrismaService,
     ){
         if(process.env.S3_ENDPOINT)
             this.s3Client = new S3Client({
@@ -22,18 +25,26 @@ export class StorageService{
 
     private getFileName(sum: string): string{
         if(this.s3Client)
-            return `./${sum.substring(0, 2)}/${sum.substring(2, 4)}/${sum.substring(4)}`;
-        return `./storage/${sum.substring(0, 2)}/${sum.substring(2, 4)}/${sum.substring(4)}`;
+            return `./${sum.substring(0, 2)}/${sum.substring(2, 4)}/${sum}`;
+        return `./.storage/${sum.substring(0, 2)}/${sum.substring(2, 4)}/${sum}`;
     }
 
     private getTempFileName(uuid: string): string{
         if(this.s3Client)
             return `./.tmp/${uuid}`;
-        return `./storage/.tmp/${uuid}`;
+        return `./.storage/.tmp/${uuid}`;
     }
 
-    async uploadBuffer(data: Buffer): Promise<void>{
-        const fileName: string = this.getFileName(this.cipherService.getSum(data));
+    async uploadBuffer(data: Buffer): Promise<string>{
+        const sum: string = this.cipherService.getSum(data);
+        const databaseFile: Files = await this.prismaService.files.findUnique({
+            where: {
+                id: sum,
+            },
+        });
+        if(databaseFile)
+            return sum;
+        const fileName: string = this.getFileName(sum);
         this.logger.debug(`Uploading file ${fileName}`);
         let file: BunFile | S3File;
         if(this.s3Client)
@@ -41,9 +52,17 @@ export class StorageService{
         else
             file = Bun.file(fileName);
         await file.write(data);
+
+        // Add file to database
+        await this.prismaService.files.create({
+            data: {
+                id: sum,
+            },
+        });
+        return sum;
     }
 
-    async uploadStream(data: ReadableStream): Promise<void>{
+    async uploadStream(data: ReadableStream): Promise<string>{
         // Write temp file
         const tempFileName: string = this.getTempFileName(Bun.randomUUIDv7());
         let tempFile: BunFile | S3File;
@@ -57,7 +76,17 @@ export class StorageService{
             writer.write(chunk);
             hasher.update(chunk);
         }
-        const fileName: string = this.getFileName(hasher.digest().toString("hex"));
+        const sum: string = hasher.digest().toString("hex");
+        const databaseFile: Files = await this.prismaService.files.findUnique({
+            where: {
+                id: sum,
+            },
+        });
+        if(databaseFile){
+            await tempFile.delete();
+            return sum;
+        }
+        const fileName: string = this.getFileName(sum);
         this.logger.debug(`Uploading file ${fileName}`);
 
         // Write final file using temp file and computed sum
@@ -72,6 +101,14 @@ export class StorageService{
 
         // Delete temp file
         await tempFile.delete();
+
+        // Add file to database
+        await this.prismaService.files.create({
+            data: {
+                id: sum,
+            },
+        });
+        return sum;
     }
 
     async downloadBuffer(sum: string): Promise<Buffer>{
@@ -93,6 +130,13 @@ export class StorageService{
     }
 
     async deleteFile(sum: string): Promise<void>{
+        // Remove file from database
+        await this.prismaService.files.delete({
+            where: {
+                id: sum,
+            },
+        });
+
         const fileName: string = this.getFileName(sum);
         this.logger.debug(`Deleting file ${fileName}`);
         if(this.s3Client)

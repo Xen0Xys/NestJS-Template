@@ -14,6 +14,7 @@ CREATE TABLE "users" (
     "token_id" VARCHAR(64) NOT NULL,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
+    "avatar_id" TEXT,
 
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
@@ -53,6 +54,13 @@ CREATE TABLE "two_factor_auth" (
     CONSTRAINT "two_factor_auth_pkey" PRIMARY KEY ("user_id")
 );
 
+-- CreateTable
+CREATE TABLE "files" (
+    "id" VARCHAR(64) NOT NULL,
+
+    CONSTRAINT "files_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
@@ -61,6 +69,9 @@ CREATE UNIQUE INDEX "email_verifications_user_id_key" ON "email_verifications"("
 
 -- CreateIndex
 CREATE UNIQUE INDEX "passkeys_user_id_webauthn_user_id_key" ON "passkeys"("user_id", "webauthn_user_id");
+
+-- AddForeignKey
+ALTER TABLE "users" ADD CONSTRAINT "users_avatar_id_fkey" FOREIGN KEY ("avatar_id") REFERENCES "files"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "email_verifications" ADD CONSTRAINT "email_verifications_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

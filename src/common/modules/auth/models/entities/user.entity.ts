@@ -8,6 +8,7 @@ export class UserEntity{
     createdAt: Date;
     updatedAt: Date;
     verified: boolean;
+    avatarId: string;
 
     @Exclude()
     provider: Providers;

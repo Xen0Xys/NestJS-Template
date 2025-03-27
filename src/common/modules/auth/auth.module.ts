@@ -29,6 +29,7 @@ import {Module} from "@nestjs/common";
         JwtStrategy,
         AuthJwtStrategy,
         DiscordStrategy,
+        DiscordStrategy,
     ],
     imports: [
         JwtModule.registerAsync({

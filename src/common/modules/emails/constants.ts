@@ -1,0 +1,1 @@
+export const EMAILS_OPTIONS = "EMAILS_OPTIONS";

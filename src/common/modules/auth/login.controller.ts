@@ -1,0 +1,142 @@
+import {Body, Controller, HttpCode, Post, Req, UnauthorizedException, UseGuards} from "@nestjs/common";
+import type {AuthenticationResponseJSON} from "@simplewebauthn/server";
+import {MagicLinkLoginDto} from "./models/dto/magic-link-login.dto";
+import {UsersService} from "../../../modules/users/users.service";
+import {LoginPayload} from "./models/payloads/login.payload";
+import {LocalLoginDto} from "./models/dto/local-login.dto";
+import {UserEntity} from "./models/entities/user.entity";
+import {ApiBearerAuth, ApiTags} from "@nestjs/swagger";
+import {JwtScope} from "./models/enums/jwt-scope";
+import {User} from "./decorators/user.decorator";
+import {TotpDto} from "./models/dto/totp.dto";
+import {LoginService} from "./login.service";
+import {AuthGuard} from "@nestjs/passport";
+import {AuthTypes} from "@prisma/client";
+
+@Controller("auth/login")
+@ApiTags("Auth")
+export class LoginController{
+    constructor(
+        private readonly loginService: LoginService,
+        private readonly usersService: UsersService,
+    ){}
+
+    /**
+     * Logs in the user using email and password
+     *
+     * @throws {401} Invalid password
+     * @throws {404} User not found
+     * @throws {500} Internal server error
+     */
+    @Post("")
+    async login(@Body() body: LocalLoginDto): Promise<LoginPayload>{
+        const user: UserEntity = await this.loginService.validateUser(body.email, body.password);
+        if(!await this.loginService.isUserVerified(user.id))
+            throw new UnauthorizedException("User not verified");
+        const authType: AuthTypes = await this.loginService.getUserAuthType(user.id);
+        const token: string = this.loginService.generateToken(
+            user.id,
+            user.tokenId,
+            authType === AuthTypes.PASSWORD ? JwtScope.USAGE : JwtScope.AUTH,
+        );
+        return new LoginPayload({
+            user,
+            authType: authType !== AuthTypes.PASSWORD ? authType : undefined,
+            token,
+        });
+    }
+
+    /**
+     * Sends a magic link to the user's email
+     *
+     * @throws {400} Bad request
+     * @throws {401} User not verified
+     * @throws {404} User not found
+     * @throws {500} Internal server error
+     */
+    @Post("magic")
+    @HttpCode(204)
+    async sendMagicLink(@Body() body: MagicLinkLoginDto): Promise<void>{
+        const user: UserEntity = await this.usersService.getUserByEmail(body.email);
+        if(!await this.loginService.isUserVerified(user.id))
+            throw new UnauthorizedException("User not verified");
+        await this.loginService.sendMagicLink(body.email);
+    }
+
+    /**
+     * Handles the login callback for the authentication process (Magic Link, Passkey, 2FA)
+     *
+     * @throws {401} Unauthorized
+     * @throws {500} Internal server error
+     */
+    @Post("callback")
+    @UseGuards(AuthGuard("auth-jwt"))
+    @ApiBearerAuth()
+    async loginCallback(@User() user: UserEntity, @Req() req: any): Promise<LoginPayload>{
+        // If the user is logging in with a magic link, check for 2FA or Passkey
+        if(req.user.scope === JwtScope.MAGIC){
+            const authType: AuthTypes = await this.loginService.getUserAuthType(user.id);
+            const token: string = this.loginService.generateToken(
+                user.id,
+                user.tokenId,
+                authType === AuthTypes.PASSWORD ? JwtScope.USAGE : JwtScope.AUTH,
+            );
+            return new LoginPayload({
+                user,
+                authType: authType !== AuthTypes.PASSWORD ? authType : undefined,
+                token,
+            });
+        }
+        // Else, the user is logging in with 2FA or Passkey
+        const authToken: string = this.loginService.generateToken(
+            user.id,
+            user.tokenId,
+            JwtScope.USAGE,
+        );
+        return new LoginPayload({
+            user,
+            token: authToken,
+        });
+    }
+
+    @Post("passkey/request")
+    @UseGuards(AuthGuard("auth-jwt"))
+    @ApiBearerAuth()
+    async requestPasskeyLogin(@User() user: UserEntity): Promise<PublicKeyCredentialRequestOptionsJSON>{
+        return await this.loginService.requestPasskeyLogin(user);
+    }
+
+    @Post("passkey/validate")
+    @UseGuards(AuthGuard("auth-jwt"))
+    @ApiBearerAuth()
+    async validatePasskeyLogin(@User() user: UserEntity, @Body() body: AuthenticationResponseJSON): Promise<LoginPayload>{
+        if(!await this.loginService.validatePasskeyLogin(user, body))
+            throw new UnauthorizedException("Invalid passkey");
+        const token: string = this.loginService.generateToken(
+            user.id,
+            user.tokenId,
+            JwtScope.USAGE,
+        );
+        return new LoginPayload({
+            user,
+            token,
+        });
+    }
+
+    @Post("2fa")
+    @UseGuards(AuthGuard("auth-jwt"))
+    @ApiBearerAuth()
+    async login2fa(@User() user: UserEntity, @Body() body: TotpDto): Promise<LoginPayload>{
+        if(!await this.loginService.validate2fa(user, body.code))
+            throw new UnauthorizedException("Invalid 2FA code");
+        const token: string = this.loginService.generateToken(
+            user.id,
+            user.tokenId,
+            JwtScope.USAGE,
+        );
+        return new LoginPayload({
+            user,
+            token,
+        });
+    }
+}

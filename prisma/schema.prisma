@@ -1,45 +1,85 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
-model User {
-  id         Int      @id @default(autoincrement())
-  username   String?  @unique
-  password   String
-  group      Group    @relation(fields: [group_id], references: [id])
-  group_id   Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-  files      File[]
+enum AuthTypes {
+  PASSWORD
+  TWO_FACTOR
+  PASSKEY
+  MAGIC_LINK
+
+  @@map("auth_types")
+}
+
+enum Providers {
+  DISCORD
+  SPOTIFY
+
+  @@map("providers")
+}
+
+model Users {
+  id                  String              @id @db.VarChar(36)
+  email               String              @unique @db.VarChar(320)
+  username            String              @db.VarChar(30)
+  password            String?
+  provider            Providers?
+  token_id            String              @db.VarChar(64) // Authenticate JWT for security
+  created_at          DateTime            @default(now())
+  updated_at          DateTime            @updatedAt
+  avatar_id           String?
+  avatar              Files?              @relation(fields: [avatar_id], references: [id], onDelete: Restrict)
+  passkeys            Passkeys[]
+  two_factor_auth     TwoFactorAuth?
+  email_verifications EmailVerifications?
 
   @@map("users")
 }
 
-model Group {
-  id         Int      @id @default(autoincrement())
-  name       String   @unique
-  users      User[]
+model EmailVerifications {
+  id         String   @id @db.VarChar(36)
+  user_id    String   @unique
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
   created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
 
-  @@map("groups")
+  @@map("email_verifications")
 }
 
-model File {
-  id      Int    @id @default(autoincrement())
-  sum     String @unique
-  name    String
-  size    Int
-  user_id Int
-  user    User   @relation(fields: [user_id], references: [id])
+model Passkeys {
+  id               String    @id
+  public_key       Bytes
+  user_id          String
+  user             Users     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  webauthn_user_id String
+  counter          Int
+  device_type      String    @db.VarChar(12)
+  backed_up        Boolean
+  transports       String[]
+  created_at       DateTime  @default(now())
+  last_used_at     DateTime?
+
+  @@unique([user_id, webauthn_user_id])
+  @@map("passkeys")
+}
+
+model TwoFactorAuth {
+  user_id    String   @id
+  user       Users    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  secret     String   @db.VarChar(64)
+  enabled    Boolean  @default(false)
+  created_at DateTime @default(now())
+
+  @@map("two_factor_auth")
+}
+
+model Files {
+  id    String  @id @db.VarChar(64)
+  users Users[]
 
   @@map("files")
 }

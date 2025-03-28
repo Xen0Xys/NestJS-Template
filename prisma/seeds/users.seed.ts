@@ -1,11 +1,13 @@
-import {CipherService} from "../../src/common/services/cipher.service";
+import {CipherService} from "../../src/common/modules/helper/cipher.service";
 
-const cipherService = new CipherService();
-
-export default async() => [
+export default async(cipherService: CipherService) => [
     {
-        username: "admin",
-        password: await cipherService.hashPassword("password"),
-        group_id: 2,
-    }
+        id: "0194b6f3-452b-7000-bcaa-ebb28bdbcfc1",
+        email: "test@example.org",
+        username: "test",
+        password: cipherService.hashPassword("password"),
+        token_id: "aa295a9d69f5a681d72894b33b687f27dcb3ace291dd736e0cb7c0937dae4e67",
+        created_at: new Date(),
+        updated_at: new Date(),
+    },
 ];

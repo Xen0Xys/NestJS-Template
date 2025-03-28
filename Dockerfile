@@ -1,20 +1,22 @@
-FROM node:21
-
-LABEL authors="Xen0Xys"
+FROM oven/bun:alpine
 
 WORKDIR /app
 
-COPY package*.json ./
-COPY prisma ./prisma/
-
+COPY bun.lock ./
+COPY package.json ./
 COPY tsconfig.json ./
+
+RUN bun install --production --frozen-lockfile
+
+COPY prisma ./prisma/
+RUN bunx prisma generate
 
 COPY . .
 
-RUN npm install -g pnpm && pnpm install
+ENV NODE_ENV=production
 
-RUN pnpx prisma generate
+RUN bun run build
 
-EXPOSE 3000
+EXPOSE 4000
 
-CMD pnpx prisma migrate deploy && pnpx prisma db seed && pnpm start
+CMD bunx prisma migrate deploy && bunx prisma db seed && bun run start:prod

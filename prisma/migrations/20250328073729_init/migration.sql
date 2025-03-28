@@ -2,7 +2,7 @@
 CREATE TYPE "auth_types" AS ENUM ('PASSWORD', 'TWO_FACTOR', 'PASSKEY', 'MAGIC_LINK');
 
 -- CreateEnum
-CREATE TYPE "providers" AS ENUM ('DISCORD');
+CREATE TYPE "providers" AS ENUM ('DISCORD', 'SPOTIFY');
 
 -- CreateTable
 CREATE TABLE "users" (

@@ -28,14 +28,14 @@ export class LoginService{
     async validateUser(email: string, password: string): Promise<UserEntity>{
         const user: UserEntity = await this.usersService.getUserByEmail(email);
         if(!user.password){
-            this.logger.debug(`Failed validation for user with id ${user.id} (Invalid provider)`);
+            this.logger.verbose(`Failed validation for user with id ${user.id} (Invalid provider)`);
             throw new UnauthorizedException(`Please use provider ${user.provider} to login`);
         }
         if(!this.cipherService.comparePassword(password, user.password)){
-            this.logger.debug(`Failed validation for user with id ${user.id} (Invalid password)`);
+            this.logger.verbose(`Failed validation for user with id ${user.id} (Invalid password)`);
             throw new UnauthorizedException("Invalid password");
         }
-        this.logger.debug(`Validated user with id ${user.id}`);
+        this.logger.verbose(`Validated user with id ${user.id}`);
         return user;
     }
 
@@ -68,7 +68,7 @@ export class LoginService{
     }
 
     generateToken(userId: string, userTokenId: string, scope: JwtScope): string{
-        this.logger.debug(`Issuing token for user with id ${userId} with scope ${scope}`);
+        this.logger.verbose(`Issuing token for user with id ${userId} with scope ${scope}`);
         return this.jwtService.sign({
             scope,
         }, {

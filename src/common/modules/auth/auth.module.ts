@@ -13,6 +13,7 @@ import {AuthService} from "./auth.service";
 import {OidcService} from "./oidc.service";
 import {JwtModule} from "@nestjs/jwt";
 import {Module} from "@nestjs/common";
+import {SpotifyStrategy} from "./strategies/oidc/spotify.strategy";
 
 @Module({
     controllers: [
@@ -29,7 +30,7 @@ import {Module} from "@nestjs/common";
         JwtStrategy,
         AuthJwtStrategy,
         DiscordStrategy,
-        DiscordStrategy,
+        SpotifyStrategy,
     ],
     imports: [
         JwtModule.registerAsync({

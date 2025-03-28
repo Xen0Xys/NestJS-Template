@@ -8,7 +8,8 @@ export class LoggerMiddleware implements NestMiddleware{
     use(req: FastifyRequest["raw"], res: FastifyReply["raw"], next: () => void){
         const startTime = Date.now();
         (res as any).on("finish", () => {
-            const path = req.url;
+            const url = new URL(req.url || "", `http://${req.headers.host}`);
+            const path: string = url.pathname;
             try{
                 const protocol = LoggerMiddleware.getProtocol(req);
                 const method = req.method;

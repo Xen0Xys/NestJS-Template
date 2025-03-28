@@ -18,6 +18,7 @@ enum AuthTypes {
 
 enum Providers {
   DISCORD
+  SPOTIFY
 
   @@map("providers")
 }

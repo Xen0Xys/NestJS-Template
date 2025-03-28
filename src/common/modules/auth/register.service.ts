@@ -47,7 +47,7 @@ export class RegisterService{
             },
         });
         await this.emailsService.sendEmailVerification(email, emailVerification.id);
-        this.logger.debug(`Registered user with id ${user.id}`);
+        this.logger.verbose(`Registered user with id ${user.id}`);
     }
 
     async registerWithProvider(email: string, username: string, provider: Providers){
@@ -67,7 +67,7 @@ export class RegisterService{
                 token_id: this.cipherService.generateRandomBytes(),
             },
         });
-        this.logger.debug(`Registered user with id ${user.id}`);
+        this.logger.verbose(`Registered user with id ${user.id}`);
     }
 
     async verifyEmail(token: string): Promise<void>{
